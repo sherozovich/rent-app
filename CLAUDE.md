@@ -406,7 +406,7 @@ chore(db): add scooter status trigger
 |6    |Telegram notifications (manual button on dashboard)    |Done      |
 |7    |Dashboard analytics + stat cards                       |Done      |
 |8    |Authentication (single-admin, localStorage session)    |Done      |
-|9    |Settings page (pricing + password change)              |Planned   |
+|9    |Settings page (pricing + password change)              |Done      |
 |10   |Expenses page + dashboard integration                  |Planned   |
 
 Always complete the current phase fully before starting the next.
