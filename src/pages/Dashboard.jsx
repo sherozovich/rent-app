@@ -13,32 +13,50 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { Bell, Loader2, Bike, KeyRound, CircleCheck, Wrench, TrendingUp, Clock, AlertCircle, Activity } from 'lucide-react'
+import {
+  Bell,
+  Loader2,
+  Bike,
+  KeyRound,
+  CircleCheck,
+  Wrench,
+  TrendingUp,
+  Clock,
+  AlertCircle,
+  Activity,
+  Plus,
+} from 'lucide-react'
 
-function StatCard({ label, value, icon: Icon, iconClass, bgClass }) {
+function StatCard({ label, value, icon: Icon, iconBg, iconColor, sub }) {
   return (
-    <div className="rounded-xl border bg-card p-4 flex flex-col gap-3 shadow-sm hover:shadow-md transition-shadow">
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground uppercase tracking-wider font-medium">{label}</span>
-        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${bgClass}`}>
-          <Icon size={15} className={iconClass} />
+    <div className="bg-white rounded-xl border border-gray-200 p-5 flex flex-col gap-4 shadow-sm hover:shadow-md transition-shadow">
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">{label}</p>
+          <p className="text-3xl font-bold text-gray-900 mt-1.5 tracking-tight">{value ?? '—'}</p>
+        </div>
+        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${iconBg}`}>
+          <Icon size={18} className={iconColor} />
         </div>
       </div>
-      <span className="text-3xl font-bold tracking-tight">{value ?? '—'}</span>
+      {sub && <p className="text-xs text-gray-400">{sub}</p>}
     </div>
   )
 }
 
-function SectionHeader({ title, count, countClass }) {
+function SectionHeader({ icon: Icon, iconColor, title, count, countColor }) {
   return (
-    <h2 className="text-base font-semibold flex items-center gap-2 mb-3">
-      {title}
-      {count > 0 && (
-        <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${countClass}`}>
-          {count}
-        </span>
-      )}
-    </h2>
+    <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center gap-2">
+        <Icon size={16} className={iconColor} />
+        <h2 className="text-sm font-semibold text-gray-900">{title}</h2>
+        {count > 0 && (
+          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${countColor}`}>
+            {count}
+          </span>
+        )}
+      </div>
+    </div>
   )
 }
 
@@ -121,7 +139,7 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 text-muted-foreground text-sm py-8">
+      <div className="flex items-center gap-2 text-gray-400 text-sm py-12">
         <Loader2 size={16} className="animate-spin" />
         Loading dashboard...
       </div>
@@ -129,69 +147,85 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Scooter fleet overview</p>
+    <div className="space-y-8 max-w-7xl">
+      {/* Page header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Dashboard</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Scooter fleet overview</p>
+        </div>
+        <Button size="sm" onClick={() => navigate('/rentals/new')}>
+          <Plus size={14} className="mr-1.5" />
+          New Rental
+        </Button>
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
         <StatCard
           label="Total Scooters"
           value={stats?.total}
           icon={Bike}
-          iconClass="text-blue-600"
-          bgClass="bg-blue-100"
+          iconBg="bg-blue-50"
+          iconColor="text-blue-600"
+          sub="Fleet size"
         />
         <StatCard
           label="Rented"
           value={stats?.rented}
           icon={KeyRound}
-          iconClass="text-purple-600"
-          bgClass="bg-purple-100"
+          iconBg="bg-purple-50"
+          iconColor="text-purple-600"
+          sub="Currently out"
         />
         <StatCard
           label="Available"
           value={stats?.available}
           icon={CircleCheck}
-          iconClass="text-green-600"
-          bgClass="bg-green-100"
+          iconBg="bg-green-50"
+          iconColor="text-green-600"
+          sub="Ready to rent"
         />
         <StatCard
           label="Maintenance"
           value={stats?.maintenance}
           icon={Wrench}
-          iconClass="text-yellow-600"
-          bgClass="bg-yellow-100"
+          iconBg="bg-amber-50"
+          iconColor="text-amber-600"
+          sub="Under service"
         />
         <StatCard
           label="Monthly Revenue"
-          value={stats?.monthlyRevenue?.toLocaleString()}
+          value={stats?.monthlyRevenue != null ? stats.monthlyRevenue.toLocaleString() + ' ₸' : '—'}
           icon={TrendingUp}
-          iconClass="text-emerald-600"
-          bgClass="bg-emerald-100"
+          iconBg="bg-emerald-50"
+          iconColor="text-emerald-600"
+          sub="This month"
         />
       </div>
 
       {/* Expiring Soon */}
       <section>
         <SectionHeader
-          title={<><Clock size={15} className="text-orange-500" /> Expiring Soon</>}
+          icon={Clock}
+          iconColor="text-orange-500"
+          title="Expiring Soon"
           count={expiring.length}
-          countClass="bg-orange-100 text-orange-700"
+          countColor="bg-orange-100 text-orange-700"
         />
         {expiring.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No rentals expiring in the next 2 days.</p>
+          <div className="bg-white rounded-xl border border-gray-200 py-8 text-center">
+            <p className="text-sm text-gray-400">No rentals expiring in the next 2 days.</p>
+          </div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border shadow-sm">
+          <div className="overflow-x-auto bg-white rounded-xl border border-gray-200 shadow-sm">
             <Table>
               <TableHeader>
-                <TableRow className="bg-muted/30">
-                  <TableHead>Agreement</TableHead>
-                  <TableHead>Courier</TableHead>
-                  <TableHead>Scooter</TableHead>
-                  <TableHead>Ends</TableHead>
+                <TableRow className="bg-gray-50 border-b border-gray-200">
+                  <TableHead className="text-xs font-semibold text-gray-500">Agreement</TableHead>
+                  <TableHead className="text-xs font-semibold text-gray-500">Courier</TableHead>
+                  <TableHead className="text-xs font-semibold text-gray-500">Scooter</TableHead>
+                  <TableHead className="text-xs font-semibold text-gray-500">Ends</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
@@ -199,14 +233,16 @@ export default function Dashboard() {
                 {expiring.map((r) => (
                   <TableRow
                     key={r.id}
-                    className="cursor-pointer hover:bg-muted/40"
+                    className="cursor-pointer hover:bg-gray-50 transition-colors"
                     onClick={() => navigate(`/rentals/${r.id}`)}
                   >
-                    <TableCell className="font-mono text-xs">{r.agreement_no}</TableCell>
-                    <TableCell className="font-medium">{r.courier?.full_name}</TableCell>
-                    <TableCell>{r.scooter?.plate}</TableCell>
+                    <TableCell className="font-mono text-xs text-gray-500">{r.agreement_no}</TableCell>
+                    <TableCell className="font-medium text-gray-900">{r.courier?.full_name}</TableCell>
+                    <TableCell className="text-gray-600">{r.scooter?.plate}</TableCell>
                     <TableCell>
-                      <span className="text-orange-600 font-semibold text-sm">{r.end_date}</span>
+                      <span className="text-orange-600 font-semibold text-sm bg-orange-50 px-2 py-0.5 rounded-md">
+                        {r.end_date}
+                      </span>
                     </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <Button
@@ -214,11 +250,12 @@ export default function Dashboard() {
                         variant={sentIds.has(r.id) ? 'ghost' : 'outline'}
                         disabled={sendingId === r.id || sentIds.has(r.id)}
                         onClick={() => handleSendReminder(r)}
+                        className="h-7 text-xs"
                       >
                         {sendingId === r.id ? (
-                          <Loader2 size={12} className="mr-1 animate-spin" />
+                          <Loader2 size={11} className="mr-1 animate-spin" />
                         ) : (
-                          <Bell size={12} className="mr-1" />
+                          <Bell size={11} className="mr-1" />
                         )}
                         {sentIds.has(r.id) ? 'Sent' : 'Remind'}
                       </Button>
@@ -234,40 +271,44 @@ export default function Dashboard() {
       {/* Overdue Payments */}
       <section>
         <SectionHeader
-          title={<><AlertCircle size={15} className="text-red-500" /> Overdue Payments</>}
+          icon={AlertCircle}
+          iconColor="text-red-500"
+          title="Overdue Payments"
           count={overdue.length}
-          countClass="bg-red-100 text-red-700"
+          countColor="bg-red-100 text-red-700"
         />
         {overdue.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No overdue payments.</p>
+          <div className="bg-white rounded-xl border border-gray-200 py-8 text-center">
+            <p className="text-sm text-gray-400">No overdue payments.</p>
+          </div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border shadow-sm">
+          <div className="overflow-x-auto bg-white rounded-xl border border-gray-200 shadow-sm">
             <Table>
               <TableHeader>
-                <TableRow className="bg-muted/30">
-                  <TableHead>Agreement</TableHead>
-                  <TableHead>Courier</TableHead>
-                  <TableHead>Scooter</TableHead>
-                  <TableHead>Charged</TableHead>
-                  <TableHead>Paid</TableHead>
-                  <TableHead>Balance</TableHead>
+                <TableRow className="bg-gray-50 border-b border-gray-200">
+                  <TableHead className="text-xs font-semibold text-gray-500">Agreement</TableHead>
+                  <TableHead className="text-xs font-semibold text-gray-500">Courier</TableHead>
+                  <TableHead className="text-xs font-semibold text-gray-500">Scooter</TableHead>
+                  <TableHead className="text-xs font-semibold text-gray-500">Charged</TableHead>
+                  <TableHead className="text-xs font-semibold text-gray-500">Paid</TableHead>
+                  <TableHead className="text-xs font-semibold text-gray-500">Balance</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {overdue.map((r) => (
                   <TableRow
                     key={r.id}
-                    className="cursor-pointer hover:bg-muted/40"
+                    className="cursor-pointer hover:bg-gray-50 transition-colors"
                     onClick={() => navigate(`/rentals/${r.id}`)}
                   >
-                    <TableCell className="font-mono text-xs">{r.agreement_no}</TableCell>
-                    <TableCell className="font-medium">{r.courier?.full_name}</TableCell>
-                    <TableCell>{r.scooter?.plate}</TableCell>
-                    <TableCell>{r.totalCharged.toLocaleString()}</TableCell>
-                    <TableCell>{r.totalPaid.toLocaleString()}</TableCell>
+                    <TableCell className="font-mono text-xs text-gray-500">{r.agreement_no}</TableCell>
+                    <TableCell className="font-medium text-gray-900">{r.courier?.full_name}</TableCell>
+                    <TableCell className="text-gray-600">{r.scooter?.plate}</TableCell>
+                    <TableCell className="text-gray-700">{r.totalCharged.toLocaleString()}</TableCell>
+                    <TableCell className="text-gray-700">{r.totalPaid.toLocaleString()}</TableCell>
                     <TableCell>
-                      <span className="text-red-600 font-bold">
-                        {(r.totalCharged - r.totalPaid).toLocaleString()}
+                      <span className="text-red-600 font-bold bg-red-50 px-2 py-0.5 rounded-md text-sm">
+                        -{(r.totalCharged - r.totalPaid).toLocaleString()}
                       </span>
                     </TableCell>
                   </TableRow>
@@ -281,37 +322,45 @@ export default function Dashboard() {
       {/* All Active Rentals */}
       <section>
         <SectionHeader
-          title={<><Activity size={15} className="text-green-500" /> Active Rentals</>}
+          icon={Activity}
+          iconColor="text-green-500"
+          title="Active Rentals"
           count={active.length}
-          countClass="bg-gray-100 text-gray-600"
+          countColor="bg-green-100 text-green-700"
         />
         {active.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No active rentals.</p>
+          <div className="bg-white rounded-xl border border-gray-200 py-8 text-center">
+            <p className="text-sm text-gray-400">No active rentals.</p>
+          </div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border shadow-sm">
+          <div className="overflow-x-auto bg-white rounded-xl border border-gray-200 shadow-sm">
             <Table>
               <TableHeader>
-                <TableRow className="bg-muted/30">
-                  <TableHead>Agreement</TableHead>
-                  <TableHead>Courier</TableHead>
-                  <TableHead>Scooter</TableHead>
-                  <TableHead>Tariff</TableHead>
-                  <TableHead>End Date</TableHead>
-                  <TableHead>Status</TableHead>
+                <TableRow className="bg-gray-50 border-b border-gray-200">
+                  <TableHead className="text-xs font-semibold text-gray-500">Agreement</TableHead>
+                  <TableHead className="text-xs font-semibold text-gray-500">Courier</TableHead>
+                  <TableHead className="text-xs font-semibold text-gray-500">Scooter</TableHead>
+                  <TableHead className="text-xs font-semibold text-gray-500">Tariff</TableHead>
+                  <TableHead className="text-xs font-semibold text-gray-500">End Date</TableHead>
+                  <TableHead className="text-xs font-semibold text-gray-500">Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {active.map((r) => (
                   <TableRow
                     key={r.id}
-                    className="cursor-pointer hover:bg-muted/40"
+                    className="cursor-pointer hover:bg-gray-50 transition-colors"
                     onClick={() => navigate(`/rentals/${r.id}`)}
                   >
-                    <TableCell className="font-mono text-xs">{r.agreement_no}</TableCell>
-                    <TableCell className="font-medium">{r.courier?.full_name}</TableCell>
-                    <TableCell>{r.scooter?.plate}</TableCell>
-                    <TableCell className="capitalize">{r.tariff}</TableCell>
-                    <TableCell>{r.end_date}</TableCell>
+                    <TableCell className="font-mono text-xs text-gray-500">{r.agreement_no}</TableCell>
+                    <TableCell className="font-medium text-gray-900">{r.courier?.full_name}</TableCell>
+                    <TableCell className="text-gray-600">{r.scooter?.plate}</TableCell>
+                    <TableCell>
+                      <span className="capitalize text-xs bg-gray-100 text-gray-700 font-medium px-2 py-0.5 rounded-md">
+                        {r.tariff}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-gray-700">{r.end_date}</TableCell>
                     <TableCell>
                       <StatusBadge status={r.status} />
                     </TableCell>
