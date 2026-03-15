@@ -4,6 +4,8 @@ import Dashboard from '@/pages/Dashboard'
 import Couriers from '@/pages/Couriers'
 import Scooters from '@/pages/Scooters'
 import Rentals from '@/pages/Rentals'
+import NewRental from '@/pages/NewRental'
+import RentalDetail from '@/pages/RentalDetail'
 
 export default function App() {
   return (
@@ -13,6 +15,8 @@ export default function App() {
         <Route path="couriers" element={<Couriers />} />
         <Route path="scooters" element={<Scooters />} />
         <Route path="rentals" element={<Rentals />} />
+        <Route path="rentals/new" element={<NewRental />} />
+        <Route path="rentals/:id" element={<RentalDetail />} />
       </Route>
     </Routes>
   )
