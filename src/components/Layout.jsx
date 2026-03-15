@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
-import { LayoutDashboard, Users, Bike, FileText, Menu, X, Zap } from 'lucide-react'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { LayoutDashboard, Users, Bike, FileText, Menu, X, Zap, LogOut } from 'lucide-react'
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -51,6 +51,12 @@ function NavItems({ onNavigate }) {
 
 export default function Layout() {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const navigate = useNavigate()
+
+  function handleLogout() {
+    localStorage.removeItem('dokon_authed')
+    navigate('/login')
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -60,9 +66,18 @@ export default function Layout() {
           <Logo />
         </div>
         <NavItems />
-        <div className="px-4 py-3 border-t border-gray-100 flex items-center gap-2">
-          <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-          <p className="text-xs text-gray-400">Scooter Rental Manager</p>
+        <div className="px-3 py-3 border-t border-gray-100 space-y-1">
+          <div className="flex items-center gap-2 px-3 py-1">
+            <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+            <p className="text-xs text-gray-400">Scooter Rental Manager</p>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+          >
+            <LogOut size={17} />
+            Logout
+          </button>
         </div>
       </aside>
 
