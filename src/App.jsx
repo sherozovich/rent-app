@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import AuthGuard from '@/components/AuthGuard'
 import Layout from '@/components/Layout'
@@ -8,8 +9,14 @@ import Scooters from '@/pages/Scooters'
 import Rentals from '@/pages/Rentals'
 import NewRental from '@/pages/NewRental'
 import RentalDetail from '@/pages/RentalDetail'
+import Settings from '@/pages/Settings'
+import { loadTariffRates } from '@/lib/tariffRates'
 
 export default function App() {
+  useEffect(() => {
+    loadTariffRates()
+  }, [])
+
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
@@ -21,6 +28,7 @@ export default function App() {
           <Route path="rentals" element={<Rentals />} />
           <Route path="rentals/new" element={<NewRental />} />
           <Route path="rentals/:id" element={<RentalDetail />} />
+          <Route path="settings" element={<Settings />} />
         </Route>
       </Route>
     </Routes>

@@ -1,12 +1,13 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Users, Bike, FileText, Menu, X, Zap, LogOut } from 'lucide-react'
+import { LayoutDashboard, Users, Bike, FileText, Menu, X, Zap, LogOut, Settings } from 'lucide-react'
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/couriers', icon: Users, label: 'Couriers' },
   { to: '/scooters', icon: Bike, label: 'Scooters' },
   { to: '/rentals', icon: FileText, label: 'Rentals' },
+  { to: '/settings', icon: Settings, label: 'Settings' },
 ]
 
 function Logo() {
