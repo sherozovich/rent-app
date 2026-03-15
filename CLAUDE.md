@@ -25,6 +25,7 @@ Single admin use. No multi-user auth required for v1.
 ```
 dokon/
 ├── CLAUDE.md
+├── components.json              # shadcn/ui config
 ├── .env.example
 ├── .gitignore
 ├── index.html
@@ -35,6 +36,7 @@ dokon/
 └── src/
     ├── main.jsx
     ├── App.jsx
+    ├── index.css                # Tailwind directives + shadcn CSS variables
     │
     ├── pages/
     │   ├── Dashboard.jsx
@@ -42,24 +44,33 @@ dokon/
     │   ├── Scooters.jsx
     │   ├── Rentals.jsx
     │   ├── NewRental.jsx        # multi-step wizard
-    │   └── RentalDetail.jsx
+    │   └── RentalDetail.jsx     # payment form inline, photo upload, PDF buttons
     │
     ├── components/
     │   ├── Layout.jsx           # sidebar (desktop) + hamburger nav (mobile)
     │   ├── StatusBadge.jsx
-    │   ├── PaymentForm.jsx
-    │   ├── PhotoUpload.jsx
-    │   ├── RentalAgreementPDF.jsx
-    │   └── DoverenostPDF.jsx
+    │   ├── PhotoUpload.jsx      # upload to Supabase Storage, delete photos
+    │   └── ui/                  # shadcn/ui components
+    │       ├── badge.jsx
+    │       ├── button.jsx
+    │       ├── card.jsx
+    │       ├── dialog.jsx
+    │       ├── input.jsx
+    │       ├── label.jsx
+    │       ├── select.jsx
+    │       └── table.jsx
     │
     ├── lib/
     │   ├── supabase.js          # supabase client init
-    │   ├── telegram.js          # sendTelegramMessage helper
-    │   ├── pdfTemplates.js      # pdfmake document definitions
-    │   └── agreementNumber.js   # DOK-YYYY-NNNN generator
+    │   ├── telegram.js          # sendTelegramMessage + buildReminderText
+    │   ├── pdfTemplates.js      # pdfmake document definitions (rentalAgreementDoc, doverenostDoc)
+    │   ├── printPdf.js          # printPdf(docDefinition) — opens PDF in new tab
+    │   ├── agreementNumber.js   # generateAgreementNumber() — DOK-YYYY-NNNN
+    │   ├── tariffRates.js       # TARIFF_RATES + calcTotalCharged()
+    │   └── utils.js             # cn() helper (clsx + tailwind-merge)
     │
     └── hooks/
-        ├── useRentals.js
+        ├── useRentals.js        # useRentals(filters) + useRental(id)
         ├── useCouriers.js
         └── useScooters.js
 ```
