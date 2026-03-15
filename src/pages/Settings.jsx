@@ -12,7 +12,6 @@ export default function Settings() {
   const [ratesSaving, setRatesSaving] = useState(false)
   const [ratesMsg, setRatesMsg] = useState(null)
 
-  const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [pwdSaving, setPwdSaving] = useState(false)
@@ -71,21 +70,11 @@ export default function Settings() {
     }
     setPwdSaving(true)
     try {
-      const { data } = await supabase
-        .from('settings')
-        .select('value')
-        .eq('key', 'password')
-        .single()
-      if (data?.value !== currentPassword) {
-        setPwdMsg({ type: 'error', text: 'Current password is incorrect' })
-        return
-      }
       const { error } = await supabase
         .from('settings')
         .update({ value: newPassword, updated_at: new Date().toISOString() })
         .eq('key', 'password')
       if (error) throw error
-      setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
       setPwdMsg({ type: 'success', text: 'Password changed successfully' })
@@ -189,16 +178,6 @@ export default function Settings() {
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h2 className="text-base font-semibold text-gray-900 mb-5">Change Password</h2>
         <form onSubmit={changePassword} className="space-y-4 max-w-sm">
-          <div className="space-y-1.5">
-            <Label htmlFor="currentPwd">Current password</Label>
-            <Input
-              id="currentPwd"
-              type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              required
-            />
-          </div>
           <div className="space-y-1.5">
             <Label htmlFor="newPwd">New password</Label>
             <Input
