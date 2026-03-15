@@ -15,7 +15,7 @@ Single admin use. No multi-user auth required for v1.
 - **Backend:** Supabase (PostgreSQL + Storage + Edge Functions)
 - **PDF Generation:** pdfmake (browser-side, no server needed)
 - **Notifications:** Telegram Bot API
-- **Hosting:** Vercel
+- **Hosting:** Netlify
 - **Language:** JavaScript (no TypeScript)
 
 -----
@@ -44,10 +44,14 @@ dokon/
     │   ├── Scooters.jsx
     │   ├── Rentals.jsx
     │   ├── NewRental.jsx        # multi-step wizard
-    │   └── RentalDetail.jsx     # payment form inline, photo upload, PDF buttons
+    │   ├── RentalDetail.jsx     # payment form inline, photo upload, PDF buttons
+    │   ├── Login.jsx            # Phase 8: single-admin login
+    │   ├── Settings.jsx         # Phase 9: pricing + password change
+    │   └── Expenses.jsx         # Phase 10: expense tracking
     │
     ├── components/
     │   ├── Layout.jsx           # sidebar (desktop) + hamburger nav (mobile)
+    │   ├── AuthGuard.jsx        # Phase 8: route protection
     │   ├── StatusBadge.jsx
     │   ├── PhotoUpload.jsx      # upload to Supabase Storage, delete photos
     │   └── ui/                  # shadcn/ui components
@@ -142,6 +146,37 @@ note         text
 created_at   timestamp DEFAULT now()
 ```
 
+### settings
+
+```sql
+id           uuid PRIMARY KEY DEFAULT gen_random_uuid()
+key          text NOT NULL UNIQUE
+value        text NOT NULL
+updated_at   timestamp DEFAULT now()
+```
+
+Seed with:
+
+```sql
+INSERT INTO settings (key, value) VALUES
+  ('username', 'jahongir'),
+  ('password', 'jahongir97'),
+  ('daily_rate', '50000'),
+  ('weekly_rate', '300000'),
+  ('monthly_rate', '1000000');
+```
+
+### expenses
+
+```sql
+id           uuid PRIMARY KEY DEFAULT gen_random_uuid()
+amount       numeric NOT NULL
+category     text NOT NULL   -- maintenance | fuel | repair | other
+description  text NOT NULL
+spent_at     date NOT NULL
+created_at   timestamp DEFAULT now()
+```
+
 ### Supabase Trigger (run once in SQL editor)
 
 ```sql
@@ -161,6 +196,16 @@ CREATE TRIGGER rental_status_trigger
 AFTER INSERT OR UPDATE ON rentals
 FOR EACH ROW EXECUTE FUNCTION update_scooter_status();
 ```
+
+-----
+
+## Currency
+
+All monetary values must be displayed in UZS (Uzbek Som).
+
+- Format: `1,500,000 UZS`
+- Use this format everywhere: dashboard, payments, expenses, settings, PDF documents
+- No other currency should appear anywhere in the app
 
 -----
 
@@ -199,6 +244,7 @@ FOR EACH ROW EXECUTE FUNCTION update_scooter_status();
 ### Dashboard (`/`)
 
 - 4 stat cards: Total / Rented / Available / Maintenance scooters + Monthly revenue
+- Stat cards: This month expenses + Net income (revenue - expenses)
 - Table: rentals ending in ≤ 2 days (expiring soon)
 - Table: rentals with balance > 0 (overdue payments)
 - Table: all active rentals
@@ -234,6 +280,29 @@ FOR EACH ROW EXECUTE FUNCTION update_scooter_status();
 ### Rentals List (`/rentals`)
 
 - Filter by status, search by courier name or plate
+
+### Login (`/login`) — Phase 8
+
+- Username + Password fields + Login button
+- Default credentials: `username = jahongir`, `password = jahongir97`
+- On submit: query `settings` table, compare credentials
+- On success: save `dokon_authed = true` to localStorage → redirect to `/`
+- On fail: show error "Username or password incorrect"
+
+### Settings (`/settings`) — Phase 9
+
+Two sections:
+
+1. **Pricing** — edit daily / weekly / monthly rates (UZS), Save button → updates `settings` table
+2. **Change Password** — current password + new password + confirm, Save → verify then update `settings` table
+
+### Expenses (`/expenses`) — Phase 10
+
+- Add expense form: amount (UZS), category (select), description, date
+- Expenses list: date, category badge, description, amount in UZS
+- Filter by category + month
+- Summary card at top: total expenses this month (UZS)
+- Delete expense (with confirm dialog)
 
 -----
 
@@ -327,15 +396,18 @@ chore(db): add scooter status trigger
 
 ## Development Phases
 
-|Phase|Scope                                                  |
-|-----|-------------------------------------------------------|
-|1    |Supabase setup + Layout + Couriers CRUD + Scooters CRUD|
-|2    |New Rental wizard + Rentals list + Rental detail       |
-|3    |Payment tracking (add payment, balance display)        |
-|4    |PDF generation (Rental Agreement + Doverenost)         |
-|5    |Photo upload (Supabase Storage)                        |
-|6    |Telegram notifications (manual button on dashboard)    |
-|7    |Dashboard analytics + stat cards                       |
+|Phase|Scope                                                  |Status    |
+|-----|-------------------------------------------------------|----------|
+|1    |Supabase setup + Layout + Couriers CRUD + Scooters CRUD|Done      |
+|2    |New Rental wizard + Rentals list + Rental detail       |Done      |
+|3    |Payment tracking (add payment, balance display)        |Done      |
+|4    |PDF generation (Rental Agreement + Doverenost)         |Done      |
+|5    |Photo upload (Supabase Storage)                        |Done      |
+|6    |Telegram notifications (manual button on dashboard)    |Done      |
+|7    |Dashboard analytics + stat cards                       |Done      |
+|8    |Authentication (single-admin, localStorage session)    |Planned   |
+|9    |Settings page (pricing + password change)              |Planned   |
+|10   |Expenses page + dashboard integration                  |Planned   |
 
 Always complete the current phase fully before starting the next.
 
@@ -354,6 +426,7 @@ Always complete the current phase fully before starting the next.
 1. One logical change per commit
 1. Never push directly to `main`
 1. After adding a new pattern or library, update this CLAUDE.md
+1. All monetary values must be in UZS format: `1,500,000 UZS`
 
 -----
 
