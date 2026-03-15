@@ -1,238 +1,355 @@
-# CLAUDE.md — AI Assistant Guide for claude_rentapp
+# CLAUDE.md — DOKON Scooter Rental Management
 
-This file provides context and conventions for AI assistants (Claude and others) working on this repository.
+This file is the single source of truth for AI assistants working on this repository.
+Read this file completely before writing any code.
+
+-----
 
 ## Project Overview
 
-**claude_rentapp** is a rental application designed to facilitate property listing, tenant management, and rental workflows. This document will be updated as the project evolves.
+**DOKON** is a web-based internal tool for managing scooter rentals to couriers.
+Single admin use. No multi-user auth required for v1.
 
-> **Note:** This repository is currently in its initial state. This CLAUDE.md serves as the foundational guide and will be expanded as code is added.
+- **Frontend:** React + Vite
+- **Styling:** Tailwind CSS + shadcn/ui
+- **Backend:** Supabase (PostgreSQL + Storage + Edge Functions)
+- **PDF Generation:** pdfmake (browser-side, no server needed)
+- **Notifications:** Telegram Bot API
+- **Hosting:** Vercel
+- **Language:** JavaScript (no TypeScript)
 
----
+-----
 
-## Repository Structure (Planned)
-
-Once development begins, the expected structure is:
+## Repository Structure
 
 ```
-claude_rentapp/
-├── CLAUDE.md              # This file
-├── README.md              # User-facing documentation
-├── .env.example           # Environment variable template
+dokon/
+├── CLAUDE.md
+├── .env.example
 ├── .gitignore
+├── index.html
+├── vite.config.js
+├── tailwind.config.js
+├── package.json
 │
-├── backend/               # Server-side application
-│   ├── src/
-│   │   ├── models/        # Database models/schemas
-│   │   ├── routes/        # API route handlers
-│   │   ├── controllers/   # Business logic
-│   │   ├── middleware/     # Auth, validation, error handling
-│   │   └── utils/         # Shared utilities
-│   ├── tests/             # Backend tests
-│   └── package.json
-│
-├── frontend/              # Client-side application
-│   ├── src/
-│   │   ├── components/    # Reusable UI components
-│   │   ├── pages/         # Page-level components
-│   │   ├── hooks/         # Custom React hooks
-│   │   ├── store/         # State management
-│   │   ├── api/           # API client layer
-│   │   └── utils/         # Frontend utilities
-│   ├── tests/
-│   └── package.json
-│
-└── docs/                  # Additional documentation
+└── src/
+    ├── main.jsx
+    ├── App.jsx
+    │
+    ├── pages/
+    │   ├── Dashboard.jsx
+    │   ├── Couriers.jsx
+    │   ├── Scooters.jsx
+    │   ├── Rentals.jsx
+    │   ├── NewRental.jsx        # multi-step wizard
+    │   └── RentalDetail.jsx
+    │
+    ├── components/
+    │   ├── Layout.jsx           # sidebar (desktop) + hamburger nav (mobile)
+    │   ├── StatusBadge.jsx
+    │   ├── PaymentForm.jsx
+    │   ├── PhotoUpload.jsx
+    │   ├── RentalAgreementPDF.jsx
+    │   └── DoverenostPDF.jsx
+    │
+    ├── lib/
+    │   ├── supabase.js          # supabase client init
+    │   ├── telegram.js          # sendTelegramMessage helper
+    │   ├── pdfTemplates.js      # pdfmake document definitions
+    │   └── agreementNumber.js   # DOK-YYYY-NNNN generator
+    │
+    └── hooks/
+        ├── useRentals.js
+        ├── useCouriers.js
+        └── useScooters.js
 ```
 
----
+-----
 
-## Git Workflow
+## Environment Variables
 
-### Branching Convention
-
-- **Main branch**: `main` — stable, production-ready code only
-- **Feature branches**: `feature/<short-description>`
-- **Bug fixes**: `fix/<short-description>`
-- **Claude-initiated branches**: `claude/<description>-<SESSION_ID>` (auto-generated)
-
-### Commit Messages
-
-Use the [Conventional Commits](https://www.conventionalcommits.org/) format:
-
-```
-<type>(<scope>): <short summary>
-
-[optional body]
+```env
+VITE_SUPABASE_URL=
+VITE_SUPABASE_ANON_KEY=
+VITE_TELEGRAM_BOT_TOKEN=
+VITE_TELEGRAM_CHAT_ID=
 ```
 
-**Types**: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
+Never commit `.env`. Always use `.env.example` as the template.
 
-**Examples:**
+-----
+
+## Database Schema
+
+### couriers
+
+```sql
+id           uuid PRIMARY KEY DEFAULT gen_random_uuid()
+full_name    text NOT NULL
+passport_no  text NOT NULL
+phone        text NOT NULL
+created_at   timestamp DEFAULT now()
 ```
-feat(auth): add JWT-based authentication for tenants
-fix(listings): correct pagination offset calculation
-docs(api): document /properties endpoint parameters
-test(models): add unit tests for Lease model
+
+### scooters
+
+```sql
+id           uuid PRIMARY KEY DEFAULT gen_random_uuid()
+model        text NOT NULL
+vin          text NOT NULL UNIQUE
+plate        text NOT NULL UNIQUE
+status       text NOT NULL DEFAULT 'available' -- available | rented | maintenance
+created_at   timestamp DEFAULT now()
 ```
 
-### Pull Request Guidelines
+### rentals
 
-- Keep PRs focused — one feature or fix per PR
-- Always reference related issues in the PR description
-- Ensure all tests pass before requesting review
-- Update CLAUDE.md if you introduce new patterns, tooling, or conventions
+```sql
+id                 uuid PRIMARY KEY DEFAULT gen_random_uuid()
+agreement_no       text NOT NULL UNIQUE   -- format: DOK-YYYY-NNNN
+courier_id         uuid REFERENCES couriers(id)
+scooter_id         uuid REFERENCES scooters(id)
+tariff             text NOT NULL          -- daily | weekly | monthly
+start_date         date NOT NULL
+end_date           date NOT NULL
+status             text NOT NULL DEFAULT 'active'  -- active | completed | cancelled
+license_no         text NOT NULL
+license_issue_date date NOT NULL
+photos             text[] DEFAULT '{}'
+created_at         timestamp DEFAULT now()
+```
 
----
+### payments
+
+```sql
+id           uuid PRIMARY KEY DEFAULT gen_random_uuid()
+rental_id    uuid REFERENCES rentals(id)
+amount       numeric NOT NULL
+method       text NOT NULL   -- cash | transfer
+paid_at      date NOT NULL
+note         text
+created_at   timestamp DEFAULT now()
+```
+
+### Supabase Trigger (run once in SQL editor)
+
+```sql
+CREATE OR REPLACE FUNCTION update_scooter_status()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    UPDATE scooters SET status = 'rented' WHERE id = NEW.scooter_id;
+  ELSIF NEW.status IN ('completed', 'cancelled') THEN
+    UPDATE scooters SET status = 'available' WHERE id = NEW.scooter_id;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER rental_status_trigger
+AFTER INSERT OR UPDATE ON rentals
+FOR EACH ROW EXECUTE FUNCTION update_scooter_status();
+```
+
+-----
+
+## Business Rules
+
+### Tariff & Duration
+
+- `daily` → minimum 3 days. end_date = start_date + N days - 1
+- `weekly` → end_date = start_date + 6
+- `monthly` → end_date = start_date + 29
+
+### Agreement Number
+
+- Format: `DOK-{YYYY}-{NNNN}` (e.g. DOK-2026-0001)
+- Sequence is per year, resets each year
+- Query MAX agreement_no for current year to get next number
+
+### Renewal
+
+- Renewal = new rental record (new agreement_no, new dates)
+- Previous rental → status = `completed`
+- New PDFs generated automatically
+- Same courier + scooter pre-filled in new rental form
+
+### Payment Balance
+
+- `total_charged` = calculated from tariff × duration (store daily/weekly/monthly rates in a config constant)
+- `total_paid` = SUM of payments for that rental
+- `balance` = total_charged - total_paid
+- If balance > 0 → show as overdue warning
+
+-----
+
+## Pages & Features
+
+### Dashboard (`/`)
+
+- 4 stat cards: Total / Rented / Available / Maintenance scooters + Monthly revenue
+- Table: rentals ending in ≤ 2 days (expiring soon)
+- Table: rentals with balance > 0 (overdue payments)
+- Table: all active rentals
+- Each expiring rental has a **Send Telegram Reminder** button
+
+### Couriers (`/couriers`)
+
+- List with: name, phone, active rental count
+- Add / Edit courier (full_name, passport_no, phone)
+
+### Scooters (`/scooters`)
+
+- List with: model, plate, VIN, status badge
+- Add / Edit scooter (model, vin, plate, status)
+
+### New Rental (`/rentals/new`) — 5-step wizard
+
+1. Select or quick-add courier
+1. Select available scooter
+1. Fill: tariff, days (if daily, min 3), start_date, license_no, license_issue_date
+1. Review summary → confirm → create rental + update scooter status
+1. Print documents + upload photos + record prepayment → activate
+
+### Rental Detail (`/rentals/:id`)
+
+- All rental info
+- Payment history + Add payment (amount, method, paid_at, note)
+- Photo gallery
+- Print Rental Agreement / Print Doverenost buttons
+- Complete Rental button
+- Renew button (pre-fills new rental form)
+
+### Rentals List (`/rentals`)
+
+- Filter by status, search by courier name or plate
+
+-----
+
+## PDF Documents (pdfmake)
+
+Both documents are generated client-side using pdfmake. Open in new tab for printing.
+
+### Rental Agreement fields
+
+agreement_no, date, courier full_name, passport_no, scooter model, VIN, plate,
+tariff (checkbox), start_date, end_date, signature lines (Admin | Courier)
+
+### Doverenost fields
+
+courier full_name, license_no, license_issue_date, scooter model, plate, VIN,
+valid from/to (= rental dates), stamp placeholder, signature lines
+
+-----
+
+## Telegram Notifications
+
+```js
+// lib/telegram.js
+export async function sendTelegramMessage(text) {
+  const token = import.meta.env.VITE_TELEGRAM_BOT_TOKEN;
+  const chatId = import.meta.env.VITE_TELEGRAM_CHAT_ID;
+  await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML' })
+  });
+}
+```
+
+Message template:
+
+```
+🛵 <b>DOKON Reminder</b>
+Courier: {full_name} | {phone}
+Scooter: {model} - {plate}
+Rental ends: {end_date}
+Agreement: {agreement_no}
+
+Action required: Renew or return scooter.
+```
+
+Trigger: Manual button on dashboard per expiring rental (no cron in v1).
+
+-----
+
+## Mobile Responsiveness
+
+App must work on mobile browsers (phone screen).
+
+- Sidebar: `hidden md:flex` — on mobile show top navbar + hamburger menu
+- All table wrappers: `overflow-x-auto`
+- Side-by-side layouts: `flex-col md:flex-row`
+- Buttons: `w-full md:w-auto`
+- Cards: `grid grid-cols-2 md:grid-cols-4`
+- Min font size: `text-sm` (no zoom required)
+- Default styles = mobile first, `md:` = tablet+, `lg:` = desktop
+
+-----
 
 ## Development Commands
 
-> These will be confirmed once the tech stack is finalized. Update this section accordingly.
-
 ```bash
-# Install dependencies (run in backend/ or frontend/)
-npm install
-
-# Start development servers
-npm run dev
-
-# Run tests
-npm test
-
-# Run tests with coverage
-npm run test:coverage
-
-# Lint code
-npm run lint
-
-# Format code
-npm run format
-
-# Build for production
-npm run build
+npm install        # install dependencies
+npm run dev        # start dev server
+npm run build      # production build
+npm run preview    # preview production build
 ```
 
----
+-----
 
-## Environment Configuration
+## Git Workflow
 
-Copy `.env.example` to `.env` and fill in values before running locally. **Never commit `.env` files.**
+- `main` → stable, production-ready only
+- `feature/<description>` → new features
+- `fix/<description>` → bug fixes
 
-Expected environment variables (update as the project grows):
+### Commit format
 
-```env
-# Application
-NODE_ENV=development
-PORT=3000
-
-# Database
-DATABASE_URL=
-
-# Authentication
-JWT_SECRET=
-JWT_EXPIRES_IN=7d
-
-# External Services (if applicable)
-STORAGE_BUCKET=
-EMAIL_SERVICE_API_KEY=
+```
+feat(rentals): add multi-step rental wizard
+fix(pdf): correct doverenost date fields
+chore(db): add scooter status trigger
 ```
 
----
+-----
 
-## Code Conventions
+## Development Phases
 
-### General
+|Phase|Scope                                                  |
+|-----|-------------------------------------------------------|
+|1    |Supabase setup + Layout + Couriers CRUD + Scooters CRUD|
+|2    |New Rental wizard + Rentals list + Rental detail       |
+|3    |Payment tracking (add payment, balance display)        |
+|4    |PDF generation (Rental Agreement + Doverenost)         |
+|5    |Photo upload (Supabase Storage)                        |
+|6    |Telegram notifications (manual button on dashboard)    |
+|7    |Dashboard analytics + stat cards                       |
 
-- Prefer clarity over cleverness — code is read more than it is written
-- Functions should do one thing; keep them short and focused
-- Name variables and functions descriptively; avoid abbreviations
-- Avoid premature abstraction — don't create helpers for one-off logic
+Always complete the current phase fully before starting the next.
 
-### TypeScript / JavaScript
+-----
 
-- Use TypeScript wherever possible for type safety
-- Prefer `const` over `let`; avoid `var`
-- Use async/await over raw Promises
-- Validate all external inputs (user input, API responses) at system boundaries
-- Do not validate internal data that is already type-safe
+## AI Assistant Rules
 
-### API Design
+1. Read this file completely before writing any code
+1. Never use TypeScript — this project is plain JavaScript
+1. Never create a separate backend — Supabase handles all data operations
+1. Always use Tailwind utility classes — no inline styles, no CSS modules
+1. Use shadcn/ui components where available before building custom ones
+1. Mobile-first — write mobile styles first, then add `md:` overrides
+1. Read the relevant file before editing it
+1. Minimal changes — only change what is needed
+1. One logical change per commit
+1. Never push directly to `main`
+1. After adding a new pattern or library, update this CLAUDE.md
 
-- Follow RESTful conventions for HTTP endpoints
-- Use plural nouns for resource endpoints: `/properties`, `/tenants`, `/leases`
-- Return consistent JSON response shapes:
-  ```json
-  { "data": ..., "error": null }
-  { "data": null, "error": { "message": "..." } }
-  ```
-- Use appropriate HTTP status codes (200, 201, 400, 401, 403, 404, 422, 500)
+-----
 
-### Database
+## Out of Scope (v1)
 
-- All schema changes must be done via migrations — never modify the database manually
-- Migration files are append-only; do not edit existing migrations
-- Use transactions for operations that modify multiple tables
-
-### Testing
-
-- Write tests for all business logic and API endpoints
-- Prefer unit tests for pure functions and integration tests for routes
-- Test file naming: `*.test.ts` co-located with source, or in a `tests/` directory
-- Aim for meaningful coverage, not 100% coverage for its own sake
-
----
-
-## Security Practices
-
-- Never hardcode secrets, credentials, or API keys — use environment variables
-- Sanitize and validate all user-supplied input before use
-- Apply authentication middleware to all protected routes
-- Use parameterized queries / ORM methods — never interpolate user input into SQL
-- Set appropriate CORS policies; do not use `origin: *` in production
-- Keep dependencies up to date; audit regularly with `npm audit`
-
----
-
-## Domain Concepts
-
-Key entities in a rental application context:
-
-| Entity | Description |
-|--------|-------------|
-| **Property** | A rentable unit (apartment, house, room) |
-| **Listing** | A public advertisement for a property |
-| **Tenant** | A person renting or applying to rent a property |
-| **Landlord** | A person or organization that owns/manages properties |
-| **Application** | A tenant's request to rent a property |
-| **Lease** | A signed rental agreement between landlord and tenant |
-| **Payment** | A rent or deposit transaction |
-| **Maintenance Request** | A tenant's report of a repair need |
-
----
-
-## AI Assistant Instructions
-
-When working in this repository as an AI assistant:
-
-1. **Read before editing** — always read the relevant files before modifying them
-2. **Minimal changes** — only change what is needed; do not refactor unrelated code
-3. **Follow existing patterns** — match the style and structure already present in the codebase
-4. **Update this file** — if you introduce new tooling, patterns, or conventions, update CLAUDE.md
-5. **Test your changes** — run the test suite after making code changes; do not skip
-6. **Commit atomically** — one logical change per commit with a clear message
-7. **Do not push to `main`** — always work on a feature or fix branch
-8. **Ask before destructive operations** — confirm before deleting files, dropping tables, or force-pushing
-
----
-
-## Updating This File
-
-This file should be updated whenever:
-
-- A new technology, library, or tool is added to the project
-- A new architectural pattern is established
-- Development workflows or commands change
-- New domain concepts are introduced
-- Conventions evolve based on team decisions
-
-Keep this file accurate and concise — it is the first thing an AI assistant reads.
+- Multi-user authentication
+- Customer-facing portal
+- Online payment integration
+- Automatic scheduled notifications (cron)
+- Mobile app (Flutter or React Native)
