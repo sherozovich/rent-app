@@ -77,35 +77,37 @@ export default function Dashboard() {
   async function fetchDashboard() {
     setLoading(true)
     try {
-      const { data: scooters } = await supabase.from('scooters').select('status')
+      const now = new Date()
+      const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
+
+      const [
+        { data: scooters },
+        { data: activeRentals },
+        { data: monthPayments },
+        { data: allPayments },
+      ] = await Promise.all([
+        supabase.from('scooters').select('status'),
+        supabase
+          .from('rentals')
+          .select(`*, courier:couriers(id, full_name, phone), scooter:scooters(id, model, plate)`)
+          .eq('status', 'active')
+          .order('end_date', { ascending: true }),
+        supabase.from('payments').select('amount').gte('paid_at', monthStart),
+        supabase.from('payments').select('rental_id, amount'),
+      ])
+
       const total = scooters?.length ?? 0
       const rented = scooters?.filter((s) => s.status === 'rented').length ?? 0
       const available = scooters?.filter((s) => s.status === 'available').length ?? 0
       const maintenance = scooters?.filter((s) => s.status === 'maintenance').length ?? 0
-
-      const { data: activeRentals } = await supabase
-        .from('rentals')
-        .select(`*, courier:couriers(id, full_name, phone), scooter:scooters(id, model, plate)`)
-        .eq('status', 'active')
-        .order('end_date', { ascending: true })
-
-      const rentalsArr = activeRentals || []
-
-      const now = new Date()
-      const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`
-      const { data: monthPayments } = await supabase
-        .from('payments')
-        .select('amount')
-        .gte('paid_at', monthStart)
       const monthlyRevenue = (monthPayments || []).reduce((s, p) => s + Number(p.amount), 0)
-
       setStats({ total, rented, available, maintenance, monthlyRevenue })
 
+      const rentalsArr = activeRentals || []
       const todayStr = now.toISOString().split('T')[0]
       const in2Days = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
       setExpiring(rentalsArr.filter((r) => r.end_date >= todayStr && r.end_date <= in2Days))
 
-      const { data: allPayments } = await supabase.from('payments').select('rental_id, amount')
       const paidMap = {}
       ;(allPayments || []).forEach((p) => {
         paidMap[p.rental_id] = (paidMap[p.rental_id] || 0) + Number(p.amount)
