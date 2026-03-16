@@ -16,7 +16,7 @@ Single admin use. No multi-user auth required for v1.
 - **Backend:** Supabase (PostgreSQL + Storage + Edge Functions)
 - **PDF Generation:** pdfmake (browser-side, no server needed)
 - **Notifications:** Telegram Bot API
-- **Hosting:** Netlify
+- **Hosting:** Vercel (https://dknrent.vercel.app)
 - **Language:** JavaScript (no TypeScript)
 - **UI Language:** Russian (все надписи на русском языке)
 
@@ -453,6 +453,19 @@ chore(db): add scooter status trigger
 
 -----
 
+## Production
+
+- **Live URL:** https://dknrent.vercel.app
+- **Repo:** https://github.com/sherozovich/rent-app
+- **Deploy:** `npx vercel deploy --prod` from project root
+- **Node version:** 20.x (set in Vercel project settings)
+- **Framework:** Vite (configured in Vercel project settings)
+- **Env vars in Vercel:** `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+
+Current state: **v1.0 — production-ready.** All core features complete and deployed.
+
+-----
+
 ## Development Phases
 
 |Phase|Scope                                                  |Status    |
@@ -469,7 +482,7 @@ chore(db): add scooter status trigger
 |10   |Expenses page + dashboard integration                  |Done      |
 |11   |Production-ready overhaul: shadcn sidebar, recharts dashboard, full Russian UI, UX polish|Done|
 
-Always complete the current phase fully before starting the next.
+New features and fixes go on `feature/<description>` or `fix/<description>` branches, then PR to main.
 
 -----
 
