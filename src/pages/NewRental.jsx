@@ -5,7 +5,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { supabase } from '@/lib/supabase'
 import { generateAgreementNumber } from '@/lib/agreementNumber'
 import { formatUzPhone, formatAmount } from '@/lib/utils'
-import { calcTotalCharged } from '@/lib/tariffRates'
+import { calcTotalCharged, TARIFF_RATES } from '@/lib/tariffRates'
 import { useCouriers } from '@/hooks/useCouriers'
 import { useScooters } from '@/hooks/useScooters'
 import { Button } from '@/components/ui/button'
@@ -33,9 +33,9 @@ const STEPS = ['Курьер', 'Скутер', 'Условия', 'Проверк
 function computeEndDate(startDate, tariff, days) {
   if (!startDate) return ''
   const d = new Date(startDate)
-  if (tariff === 'daily') d.setDate(d.getDate() + Number(days) - 1)
-  else if (tariff === 'weekly') d.setDate(d.getDate() + 6)
-  else if (tariff === 'monthly') d.setDate(d.getDate() + 29)
+  if (tariff === 'daily') d.setDate(d.getDate() + Number(days))      // N days use + 1 buffer
+  else if (tariff === 'weekly') d.setDate(d.getDate() + 8)            // 7 days use + 1 return + 1 paperwork
+  else if (tariff === 'monthly') d.setDate(d.getDate() + 31)          // 30 days use + 1 return + 1 paperwork
   return d.toISOString().split('T')[0]
 }
 
@@ -338,7 +338,11 @@ function Step2({ data, setData }) {
 function Step3({ data, setData }) {
   const { tariff, days, start_date } = data
   const endDate = computeEndDate(start_date, tariff, days)
-  const defaultPrice = endDate ? calcTotalCharged(tariff, start_date, endDate) : 0
+  const defaultPrice = endDate
+    ? tariff === 'daily'
+      ? Number(days) * TARIFF_RATES.daily
+      : calcTotalCharged(tariff, start_date, endDate)
+    : 0
 
   // Auto-fill agreed_price when tariff/days/start_date change
   useEffect(() => {
