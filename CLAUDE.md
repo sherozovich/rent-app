@@ -293,9 +293,9 @@ All monetary values must be displayed in UZS (Uzbek Som).
 
 ### Tariff & Duration
 
-- `daily` → minimum 3 days. end_date = start_date + N days - 1
-- `weekly` → end_date = start_date + 6
-- `monthly` → end_date = start_date + 29
+- `daily` → minimum 3 days. end_date = start_date + N days (N+1 inclusive — 1 buffer day for handover)
+- `weekly` → end_date = start_date + 8 (9 days inclusive: 7 use + 1 return + 1 paperwork)
+- `monthly` → end_date = start_date + 31 (32 days inclusive: 30 use + 1 return + 1 paperwork)
 
 ### Agreement Number
 
@@ -313,6 +313,7 @@ All monetary values must be displayed in UZS (Uzbek Som).
 ### Payment Balance
 
 - `total_charged` = `rental.agreed_price` if set, otherwise `calcTotalCharged(tariff, start_date, end_date)`
+- **Daily price** in NewRental Step 3 is computed as `days × TARIFF_RATES.daily` (not from date diff), because end_date includes a buffer day that should not be billed
 - `total_paid` = SUM of payments for that rental
 - `balance` = total_charged - total_paid
 - If balance > 0 → show as overdue warning
@@ -516,6 +517,7 @@ Current state: **v1.0 — production-ready.** All core features complete and dep
 |11   |Production-ready overhaul: shadcn sidebar, recharts dashboard, full Russian UI, UX polish|Done|
 |12   |Courier address field, SearchCombobox selection in wizard, custom agreed_price per rental|Done|
 |13   |Courier avatar upload + compression, avatar in list + NewRental card, rental photo compression|Done|
+|14   |End-date buffer: +2 days for weekly/monthly, +1 day for daily (paperwork/handover day)|Done|
 
 New features and fixes go on `feature/<description>` or `fix/<description>` branches, then PR to main.
 
