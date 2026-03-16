@@ -158,15 +158,21 @@ export default function Scooters() {
           <DialogHeader>
             <DialogTitle>Delete Scooter</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-gray-600">
-            Are you sure you want to delete <span className="font-medium">{deleteTarget?.model} — {deleteTarget?.plate}</span>? This cannot be undone.
-          </p>
+          {deleteTarget?.status !== 'available' ? (
+            <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">
+              Cannot delete <span className="font-medium">{deleteTarget?.model} — {deleteTarget?.plate}</span> — status is <span className="font-medium">{deleteTarget?.status}</span>. Only available scooters can be deleted.
+            </p>
+          ) : (
+            <p className="text-sm text-gray-600">
+              Are you sure you want to delete <span className="font-medium">{deleteTarget?.model} — {deleteTarget?.plate}</span>? This cannot be undone.
+            </p>
+          )}
           {deleteError && (
             <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{deleteError}</p>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleting}>Cancel</Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting || deleteTarget?.status !== 'available'}>
               {deleting ? 'Deleting...' : 'Delete'}
             </Button>
           </DialogFooter>

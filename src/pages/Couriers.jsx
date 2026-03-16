@@ -145,15 +145,21 @@ export default function Couriers() {
           <DialogHeader>
             <DialogTitle>Delete Courier</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-gray-600">
-            Are you sure you want to delete <span className="font-medium">{deleteTarget?.full_name}</span>? This cannot be undone.
-          </p>
+          {deleteTarget?.active_rentals > 0 ? (
+            <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">
+              Cannot delete <span className="font-medium">{deleteTarget?.full_name}</span> — they have {deleteTarget?.active_rentals} active rental(s). Complete or cancel all rentals first.
+            </p>
+          ) : (
+            <p className="text-sm text-gray-600">
+              Are you sure you want to delete <span className="font-medium">{deleteTarget?.full_name}</span>? This cannot be undone.
+            </p>
+          )}
           {deleteError && (
             <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{deleteError}</p>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleting}>Cancel</Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting || deleteTarget?.active_rentals > 0}>
               {deleting ? 'Deleting...' : 'Delete'}
             </Button>
           </DialogFooter>
