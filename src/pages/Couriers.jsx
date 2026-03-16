@@ -285,7 +285,7 @@ export default function Couriers() {
       </Dialog>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editTarget ? 'Редактировать курьера' : 'Добавить курьера'}</DialogTitle>
           </DialogHeader>
