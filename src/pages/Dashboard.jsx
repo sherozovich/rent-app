@@ -191,7 +191,7 @@ export default function Dashboard() {
         rentalsArr
           .map((r) => ({
             ...r,
-            totalCharged: calcTotalCharged(r.tariff, r.start_date, r.end_date),
+            totalCharged: r.agreed_price ?? calcTotalCharged(r.tariff, r.start_date, r.end_date),
             totalPaid: paidMap[r.id] || 0,
           }))
           .filter((r) => r.totalCharged - r.totalPaid > 0),
