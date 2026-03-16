@@ -3,7 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, Check } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { generateAgreementNumber } from '@/lib/agreementNumber'
-import { formatUzPhone } from '@/lib/utils'
+import { formatUzPhone, formatAmount } from '@/lib/utils'
+import { calcTotalCharged } from '@/lib/tariffRates'
 import { useCouriers } from '@/hooks/useCouriers'
 import { useScooters } from '@/hooks/useScooters'
 import { Button } from '@/components/ui/button'
@@ -123,7 +124,6 @@ function Step1({ data, setData }) {
   const [form, setForm] = useState(emptyQuickForm)
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState(null)
-  const [search, setSearch] = useState('')
   const [countries, setCountries] = useState([])
   const [cities, setCities] = useState([])
 
@@ -161,43 +161,33 @@ function Step1({ data, setData }) {
     }
   }
 
-  const filtered = search.length > 0
-    ? couriers.filter((c) => c.full_name.toLowerCase().includes(search.toLowerCase()))
-    : []
+  const selectedLabel = data.courier ? data.courier.full_name : ''
+  const courierOptions = couriers.map(c => c.full_name)
+
+  function handleCourierSelect(name) {
+    const courier = couriers.find(c => c.full_name === name) ?? null
+    setData(p => ({ ...p, courier }))
+  }
 
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Выберите курьера</h2>
 
-      <Input
-        placeholder="Поиск по имени..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />
-
       {loading ? (
         <p className="text-sm text-muted-foreground">Загрузка...</p>
-      ) : search.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Введите имя для поиска...</p>
       ) : (
-        <div className="space-y-2 max-h-64 overflow-y-auto">
-          {filtered.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Курьеры не найдены.</p>
-          ) : filtered.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => setData((p) => ({ ...p, courier: c }))}
-              className={`w-full text-left px-4 py-3 rounded-lg border transition-colors ${
-                data.courier?.id === c.id
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border hover:bg-muted/50'
-              }`}
-            >
-              <div className="font-medium">{c.full_name}</div>
-              <div className="text-sm text-muted-foreground">{c.phone}</div>
-            </button>
-          ))}
+        <SearchCombobox
+          value={selectedLabel}
+          onChange={handleCourierSelect}
+          options={courierOptions}
+          placeholder="Поиск по имени..."
+        />
+      )}
+
+      {data.courier && (
+        <div className="rounded-lg border border-primary bg-primary/5 px-4 py-3 text-sm">
+          <div className="font-medium">{data.courier.full_name}</div>
+          <div className="text-muted-foreground">{data.courier.phone}</div>
         </div>
       )}
 
@@ -294,47 +284,34 @@ function Step1({ data, setData }) {
 // ─── Step 2: Select available scooter ────────────────────────────────────────
 function Step2({ data, setData }) {
   const { scooters, loading } = useScooters()
-  const [search, setSearch] = useState('')
   const available = scooters.filter((s) => s.status === 'available')
-  const filtered = search.length > 0
-    ? available.filter((s) => s.plate.toLowerCase().includes(search.toLowerCase()))
-    : []
+  const scooterOptions = available.map(s => `${s.plate} – ${s.model}`)
+  const selectedLabel = data.scooter ? `${data.scooter.plate} – ${data.scooter.model}` : ''
+
+  function handleScooterSelect(label) {
+    const scooter = available.find(s => `${s.plate} – ${s.model}` === label) ?? null
+    setData(p => ({ ...p, scooter }))
+  }
 
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Выберите скутер</h2>
-      <Input
-        placeholder="Поиск по номеру..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />
       {loading ? (
         <p className="text-sm text-muted-foreground">Загрузка...</p>
       ) : available.length === 0 ? (
         <p className="text-sm text-muted-foreground">Нет доступных скутеров.</p>
-      ) : search.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Введите номер для поиска...</p>
       ) : (
-        <div className="space-y-2 max-h-64 overflow-y-auto">
-          {filtered.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Скутеры не найдены.</p>
-          ) : filtered.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => setData((p) => ({ ...p, scooter: s }))}
-              className={`w-full text-left px-4 py-3 rounded-lg border transition-colors ${
-                data.scooter?.id === s.id
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border hover:bg-muted/50'
-              }`}
-            >
-              <div className="font-medium">{s.model}</div>
-              <div className="text-sm text-muted-foreground">
-                {s.plate} · {s.vin}
-              </div>
-            </button>
-          ))}
+        <SearchCombobox
+          value={selectedLabel}
+          onChange={handleScooterSelect}
+          options={scooterOptions}
+          placeholder="Поиск по номеру..."
+        />
+      )}
+      {data.scooter && (
+        <div className="rounded-lg border border-primary bg-primary/5 px-4 py-3 text-sm">
+          <div className="font-medium">{data.scooter.model}</div>
+          <div className="text-muted-foreground">{data.scooter.plate} · {data.scooter.vin}</div>
         </div>
       )}
     </div>
@@ -345,6 +322,14 @@ function Step2({ data, setData }) {
 function Step3({ data, setData }) {
   const { tariff, days, start_date } = data
   const endDate = computeEndDate(start_date, tariff, days)
+  const defaultPrice = endDate ? calcTotalCharged(tariff, start_date, endDate) : 0
+
+  // Auto-fill agreed_price when tariff/days/start_date change
+  useEffect(() => {
+    if (defaultPrice > 0) {
+      setData(p => ({ ...p, agreed_price: String(defaultPrice) }))
+    }
+  }, [tariff, days, start_date, defaultPrice])
 
   function set(field, value) {
     setData((p) => ({ ...p, [field]: value }))
@@ -394,6 +379,29 @@ function Step3({ data, setData }) {
           Дата окончания: <span className="font-medium text-foreground">{endDate}</span>
         </p>
       )}
+
+      {endDate && (
+        <div className="space-y-2">
+          <Label>Стоимость аренды (UZS)</Label>
+          <Input
+            inputMode="numeric"
+            value={formatAmount(data.agreed_price ?? '')}
+            onChange={(e) => set('agreed_price', e.target.value.replace(/\D/g, ''))}
+          />
+          {defaultPrice > 0 && String(data.agreed_price) !== String(defaultPrice) && (
+            <p className="text-xs text-muted-foreground">
+              По тарифу: {defaultPrice.toLocaleString()} UZS
+              <button
+                type="button"
+                className="ml-2 text-primary underline"
+                onClick={() => set('agreed_price', String(defaultPrice))}
+              >
+                сбросить
+              </button>
+            </p>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -415,6 +423,7 @@ function Step4({ data }) {
         {data.tariff === 'daily' && <Row label="Дней" value={data.days} />}
         <Row label="Начало" value={data.start_date} />
         <Row label="Окончание" value={endDate} />
+        <Row label="Стоимость" value={data.agreed_price ? `${Number(data.agreed_price).toLocaleString()} UZS` : '—'} />
         <Row label="Номер прав" value={data.license_no} />
         <Row label="Дата выдачи прав" value={data.license_issue_date} />
       </div>
@@ -455,6 +464,7 @@ const initialData = {
   tariff: 'daily',
   days: 3,
   start_date: new Date().toISOString().split('T')[0],
+  agreed_price: '',
 }
 
 export default function NewRental() {
@@ -507,6 +517,7 @@ export default function NewRental() {
           status: 'active',
           license_no: data.courier.license_no ?? '',
           license_issue_date: data.courier.license_issue_date ?? null,
+          agreed_price: Number(data.agreed_price) || calcTotalCharged(data.tariff, data.start_date, endDate),
         })
         .select()
         .single()

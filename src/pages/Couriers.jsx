@@ -25,6 +25,7 @@ const emptyForm = {
   full_name: '', passport_no: '', phone: '',
   license_no: '', license_issue_date: '',
   birth_country: '', birth_city: '',
+  address: '',
 }
 
 function SearchCombobox({ value, onChange, options, placeholder, disabled }) {
@@ -118,6 +119,7 @@ export default function Couriers() {
       license_issue_date: courier.license_issue_date ?? '',
       birth_country: courier.birth_country ?? '',
       birth_city: courier.birth_city ?? '',
+      address: courier.address ?? '',
     })
     setFormError(null)
     setOpen(true)
@@ -282,6 +284,16 @@ export default function Couriers() {
                 onChange={(e) => setForm((p) => ({ ...p, phone: formatUzPhone(e.target.value) }))}
                 placeholder="+998 XX XXX XX XX"
                 required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="address">Адрес</Label>
+              <Input
+                id="address"
+                name="address"
+                value={form.address}
+                onChange={handleChange}
+                placeholder="напр. Ул. Навои, д. 12, кв. 5"
               />
             </div>
             <div className="space-y-2">
