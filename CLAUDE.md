@@ -336,7 +336,7 @@ All monetary values must be displayed in UZS (Uzbek Som).
 - BarChart: Выручка за 14 дней (recharts via shadcn ChartContainer, data from `payments` grouped by `paid_at`)
 - PieChart: Расходы по категориям (current month `expenses` grouped by category)
 - Table: Истекают скоро (rentals ending in ≤ 2 days) + Send Telegram Reminder button
-- Table: Задолженности (rentals with balance > 0)
+- Table: Задолженности (rentals with balance > 0) — uses `agreed_price ?? calcTotalCharged(...)` for balance
 - Table: Активные аренды
 
 ### Couriers (`/couriers`)
@@ -355,7 +355,7 @@ All monetary values must be displayed in UZS (Uzbek Som).
 
 ### New Rental (`/rentals/new`) — 5-step wizard
 
-1. Select or quick-add courier — **SearchCombobox dropdown** (not list+button). Quick-add modal includes address field. Selected courier shown as a card with **circular avatar**, name, phone.
+1. Select or quick-add courier — **SearchCombobox dropdown** (not list+button). Quick-add modal includes address field and **avatar photo upload**. Selected courier shown as a card with **circular avatar**, name, phone.
 1. Select available scooter — **SearchCombobox dropdown**, shows `plate – model` options
 1. Fill: tariff, days (if daily, min 3), start_date. **Price input** auto-fills from tariff rate, admin can override. Shows "сбросить" link if changed.
 1. Review summary (includes Стоимость row) → confirm → create rental + save `agreed_price`
@@ -518,6 +518,7 @@ Current state: **v1.0 — production-ready.** All core features complete and dep
 |12   |Courier address field, SearchCombobox selection in wizard, custom agreed_price per rental|Done|
 |13   |Courier avatar upload + compression, avatar in list + NewRental card, rental photo compression|Done|
 |14   |End-date buffer: +2 days for weekly/monthly, +1 day for daily (paperwork/handover day)|Done|
+|15   |Bug fixes: dashboard agreed_price, payments layout, quick-add avatar, rental-photos bucket|Done|
 
 New features and fixes go on `feature/<description>` or `fix/<description>` branches, then PR to main.
 
