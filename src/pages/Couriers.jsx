@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { useCouriers } from '@/hooks/useCouriers'
 import { Button } from '@/components/ui/button'
@@ -20,7 +20,11 @@ import {
   TableRow,
 } from '@/components/ui/table'
 
-const emptyForm = { full_name: '', passport_no: '', phone: '' }
+const emptyForm = {
+  full_name: '', passport_no: '', phone: '',
+  license_no: '', license_issue_date: '',
+  nationality: '', birth_country: '', birth_city: '',
+}
 
 export default function Couriers() {
   const { couriers, loading, error, addCourier, updateCourier, deleteCourier } = useCouriers()
@@ -32,6 +36,27 @@ export default function Couriers() {
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState(null)
+  const [countries, setCountries] = useState([])
+  const [cities, setCities] = useState([])
+
+  useEffect(() => {
+    fetch('https://restcountries.com/v3.1/all?fields=name')
+      .then((r) => r.json())
+      .then((data) => setCountries(data.map((c) => c.name.common).sort()))
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    if (!form.birth_country) { setCities([]); return }
+    fetch('https://countriesnow.space/api/v0.1/countries/cities', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ country: form.birth_country }),
+    })
+      .then((r) => r.json())
+      .then((d) => setCities(d.data || []))
+      .catch(() => setCities([]))
+  }, [form.birth_country])
 
   function openAdd() {
     setEditTarget(null)
@@ -46,6 +71,11 @@ export default function Couriers() {
       full_name: courier.full_name,
       passport_no: courier.passport_no,
       phone: courier.phone,
+      license_no: courier.license_no ?? '',
+      license_issue_date: courier.license_issue_date ?? '',
+      nationality: courier.nationality ?? '',
+      birth_country: courier.birth_country ?? '',
+      birth_city: courier.birth_city ?? '',
     })
     setFormError(null)
     setOpen(true)
@@ -204,6 +234,72 @@ export default function Couriers() {
                 placeholder="e.g. +380501234567"
                 required
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="license_no">Driver's License No</Label>
+              <Input
+                id="license_no"
+                name="license_no"
+                value={form.license_no}
+                onChange={handleChange}
+                placeholder="e.g. AA123456"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="license_issue_date">License Issue Date</Label>
+              <Input
+                id="license_issue_date"
+                name="license_issue_date"
+                type="date"
+                value={form.license_issue_date}
+                onChange={handleChange}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="nationality">Nationality</Label>
+              <select
+                id="nationality"
+                name="nationality"
+                value={form.nationality}
+                onChange={handleChange}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <option value="">Select nationality</option>
+                {countries.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="birth_country">Birth Country</Label>
+              <select
+                id="birth_country"
+                name="birth_country"
+                value={form.birth_country}
+                onChange={(e) => setForm((p) => ({ ...p, birth_country: e.target.value, birth_city: '' }))}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <option value="">Select country</option>
+                {countries.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="birth_city">Birth City</Label>
+              <select
+                id="birth_city"
+                name="birth_city"
+                value={form.birth_city}
+                onChange={handleChange}
+                disabled={!form.birth_country}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
+              >
+                <option value="">Select city</option>
+                {cities.map((city) => (
+                  <option key={city} value={city}>{city}</option>
+                ))}
+              </select>
             </div>
             {formError && (
               <p className="text-sm text-destructive">{formError}</p>

@@ -65,6 +65,7 @@ function Step1({ data, setData }) {
   const [showAdd, setShowAdd] = useState(false)
   const [form, setForm] = useState({ full_name: '', passport_no: '', phone: '' })
   const [saving, setSaving] = useState(false)
+  const [search, setSearch] = useState('')
 
   async function handleQuickAdd(e) {
     e.preventDefault()
@@ -78,15 +79,27 @@ function Step1({ data, setData }) {
     }
   }
 
+  const filtered = couriers.filter((c) =>
+    c.full_name.toLowerCase().includes(search.toLowerCase())
+  )
+
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Select Courier</h2>
+
+      <Input
+        placeholder="Search by name..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
 
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading...</p>
       ) : (
         <div className="space-y-2 max-h-64 overflow-y-auto">
-          {couriers.map((c) => (
+          {filtered.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No couriers found.</p>
+          ) : filtered.map((c) => (
             <button
               key={c.id}
               type="button"
@@ -146,18 +159,29 @@ function Step1({ data, setData }) {
 // ─── Step 2: Select available scooter ────────────────────────────────────────
 function Step2({ data, setData }) {
   const { scooters, loading } = useScooters()
+  const [search, setSearch] = useState('')
   const available = scooters.filter((s) => s.status === 'available')
+  const filtered = available.filter((s) =>
+    s.plate.toLowerCase().includes(search.toLowerCase())
+  )
 
   return (
     <div className="space-y-4">
       <h2 className="text-lg font-semibold">Select Scooter</h2>
+      <Input
+        placeholder="Search by plate..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading...</p>
       ) : available.length === 0 ? (
         <p className="text-sm text-muted-foreground">No scooters available right now.</p>
       ) : (
         <div className="space-y-2 max-h-64 overflow-y-auto">
-          {available.map((s) => (
+          {filtered.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No scooters found.</p>
+          ) : filtered.map((s) => (
             <button
               key={s.id}
               type="button"
@@ -182,7 +206,7 @@ function Step2({ data, setData }) {
 
 // ─── Step 3: Rental details ───────────────────────────────────────────────────
 function Step3({ data, setData }) {
-  const { tariff, days, start_date, license_no, license_issue_date } = data
+  const { tariff, days, start_date } = data
   const endDate = computeEndDate(start_date, tariff, days)
 
   function set(field, value) {
@@ -233,24 +257,6 @@ function Step3({ data, setData }) {
           End date: <span className="font-medium text-foreground">{endDate}</span>
         </p>
       )}
-
-      <div className="space-y-2">
-        <Label>Driver's License No</Label>
-        <Input
-          value={license_no}
-          onChange={(e) => set('license_no', e.target.value)}
-          placeholder="e.g. DLN123456"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label>License Issue Date</Label>
-        <Input
-          type="date"
-          value={license_issue_date}
-          onChange={(e) => set('license_issue_date', e.target.value)}
-        />
-      </div>
     </div>
   )
 }
@@ -311,8 +317,6 @@ const initialData = {
   tariff: 'daily',
   days: 3,
   start_date: new Date().toISOString().split('T')[0],
-  license_no: '',
-  license_issue_date: '',
 }
 
 export default function NewRental() {
@@ -340,8 +344,6 @@ export default function NewRental() {
         data.tariff &&
         data.start_date &&
         endDate &&
-        data.license_no &&
-        data.license_issue_date &&
         (data.tariff !== 'daily' || Number(data.days) >= 3)
       )
     }
@@ -365,8 +367,8 @@ export default function NewRental() {
           start_date: data.start_date,
           end_date: endDate,
           status: 'active',
-          license_no: data.license_no,
-          license_issue_date: data.license_issue_date,
+          license_no: data.courier.license_no ?? '',
+          license_issue_date: data.courier.license_issue_date ?? null,
         })
         .select()
         .single()
