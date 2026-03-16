@@ -121,6 +121,7 @@ license_no         text
 license_issue_date date
 birth_country      text
 birth_city         text
+address            text
 created_at         timestamp DEFAULT now()
 ```
 
@@ -149,6 +150,7 @@ status             text NOT NULL DEFAULT 'active'  -- active | completed | cance
 license_no         text NOT NULL
 license_issue_date date NOT NULL
 photos             text[] DEFAULT '{}'
+agreed_price       numeric                -- custom price set at rental creation; overrides calcTotalCharged
 created_at         timestamp DEFAULT now()
 ```
 
@@ -288,10 +290,18 @@ All monetary values must be displayed in UZS (Uzbek Som).
 
 ### Payment Balance
 
-- `total_charged` = calculated from tariff × duration (store daily/weekly/monthly rates in a config constant)
+- `total_charged` = `rental.agreed_price` if set, otherwise `calcTotalCharged(tariff, start_date, end_date)`
 - `total_paid` = SUM of payments for that rental
 - `balance` = total_charged - total_paid
 - If balance > 0 → show as overdue warning
+
+### Custom Rental Price (`agreed_price`)
+
+- When creating a rental (Step 3), the price input defaults to `calcTotalCharged()` for the selected tariff/duration
+- Admin can override this price freely (e.g. 300,000 UZS weekly → enter 250,000 UZS)
+- A "сбросить" link resets to the default tariff price
+- The entered price is saved as `agreed_price` in the `rentals` table
+- `RentalDetail` reads `rental.agreed_price ?? calcTotalCharged(...)` — backward-compatible with old rentals
 
 -----
 
@@ -309,7 +319,7 @@ All monetary values must be displayed in UZS (Uzbek Som).
 ### Couriers (`/couriers`)
 
 - List with: ФИО, Телефон, active rental count
-- Add / Edit courier: full_name, passport_no, phone, license_no, license_issue_date, birth_country, birth_city
+- Add / Edit courier: full_name, passport_no, phone, **address**, license_no, license_issue_date, birth_country, birth_city
 - birth_country: searchable combobox, options from `restcountries.com/v3.1/all?fields=name`
 - birth_city: searchable combobox (disabled until country chosen), options from `countriesnow.space/api/v0.1/countries/cities` (POST)
 - `nationality` field removed — not needed
@@ -321,11 +331,11 @@ All monetary values must be displayed in UZS (Uzbek Som).
 
 ### New Rental (`/rentals/new`) — 5-step wizard
 
-1. Select or quick-add courier — search by name (live filter)
-1. Select available scooter — search by plate number (live filter)
-1. Fill: tariff, days (if daily, min 3), start_date (license_no/license_issue_date auto-filled from courier)
-1. Review summary → confirm → create rental + update scooter status
-1. Print documents + upload photos + record prepayment → activate
+1. Select or quick-add courier — **SearchCombobox dropdown** (not list+button). Quick-add modal includes address field.
+1. Select available scooter — **SearchCombobox dropdown**, shows `plate – model` options
+1. Fill: tariff, days (if daily, min 3), start_date. **Price input** auto-fills from tariff rate, admin can override. Shows "сбросить" link if changed.
+1. Review summary (includes Стоимость row) → confirm → create rental + save `agreed_price`
+1. Success screen with agreement number → navigate to rental detail
 
 ### Rental Detail (`/rentals/:id`)
 
@@ -481,6 +491,7 @@ Current state: **v1.0 — production-ready.** All core features complete and dep
 |9    |Settings page (pricing + password change)              |Done      |
 |10   |Expenses page + dashboard integration                  |Done      |
 |11   |Production-ready overhaul: shadcn sidebar, recharts dashboard, full Russian UI, UX polish|Done|
+|12   |Courier address field, SearchCombobox selection in wizard, custom agreed_price per rental|Done|
 
 New features and fixes go on `feature/<description>` or `fix/<description>` branches, then PR to main.
 
@@ -537,11 +548,12 @@ Always use this map when displaying tariffs:
 ```
 
 ### SearchCombobox
-Custom component used for birth_country and birth_city in Couriers and NewRental.
+Custom component used for: birth_country, birth_city (Couriers + NewRental quick-add), **courier selection** (NewRental Step 1), **scooter selection** (NewRental Step 2).
 - Defined inline at top of each file (not a shared component)
 - Uses `useRef` for click-outside detection
 - Shows filtered dropdown max 80 results
 - `onMouseDown e.preventDefault()` prevents blur-before-click
+- After selection, shows a summary card below (selected courier or scooter details)
 
 -----
 
