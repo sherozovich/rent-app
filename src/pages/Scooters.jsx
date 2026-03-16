@@ -61,7 +61,9 @@ export default function Scooters() {
   }
 
   function handleChange(e) {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+    const { name, value } = e.target
+    const upper = ['plate', 'vin'].includes(name)
+    setForm((prev) => ({ ...prev, [name]: upper ? value.toUpperCase() : value }))
   }
 
   async function handleDelete() {

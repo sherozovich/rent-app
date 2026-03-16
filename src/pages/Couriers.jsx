@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { useCouriers } from '@/hooks/useCouriers'
+import { formatUzPhone } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -70,7 +71,7 @@ export default function Couriers() {
     setForm({
       full_name: courier.full_name,
       passport_no: courier.passport_no,
-      phone: courier.phone,
+      phone: formatUzPhone(courier.phone ?? ''),
       license_no: courier.license_no ?? '',
       license_issue_date: courier.license_issue_date ?? '',
       nationality: courier.nationality ?? '',
@@ -82,7 +83,9 @@ export default function Couriers() {
   }
 
   function handleChange(e) {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+    const { name, value } = e.target
+    const upper = ['passport_no', 'license_no'].includes(name)
+    setForm((prev) => ({ ...prev, [name]: upper ? value.toUpperCase() : value }))
   }
 
   async function handleDelete() {
@@ -230,8 +233,8 @@ export default function Couriers() {
                 id="phone"
                 name="phone"
                 value={form.phone}
-                onChange={handleChange}
-                placeholder="e.g. +380501234567"
+                onChange={(e) => setForm((p) => ({ ...p, phone: formatUzPhone(e.target.value) }))}
+                placeholder="+998 XX XXX XX XX"
                 required
               />
             </div>

@@ -26,6 +26,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Plus, Trash2, Loader2, TrendingDown } from 'lucide-react'
+import { formatAmount } from '@/lib/utils'
 
 const CATEGORIES = ['maintenance', 'fuel', 'repair', 'other']
 
@@ -231,10 +232,10 @@ export default function Expenses() {
             <div className="space-y-1.5">
               <Label>Amount (UZS)</Label>
               <Input
-                type="number"
-                min="0"
-                value={form.amount}
-                onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))}
+                inputMode="numeric"
+                value={formatAmount(form.amount)}
+                onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value.replace(/\D/g, '') }))}
+                placeholder="0"
                 required
               />
             </div>

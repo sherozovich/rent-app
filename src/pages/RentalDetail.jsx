@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { ChevronLeft, Plus, RefreshCw, CheckCircle, FileText, FileCheck } from 'lucide-react'
 import { useRental } from '@/hooks/useRentals'
 import { calcTotalCharged } from '@/lib/tariffRates'
+import { formatAmount } from '@/lib/utils'
 import { printPdf } from '@/lib/printPdf'
 import { rentalAgreementDoc, doverenostDoc } from '@/lib/pdfTemplates'
 import { Button } from '@/components/ui/button'
@@ -270,11 +271,10 @@ export default function RentalDetail() {
             <div className="space-y-2">
               <Label>Amount</Label>
               <Input
-                type="number"
-                min="0"
-                step="0.01"
-                value={payForm.amount}
-                onChange={(e) => setPayForm((p) => ({ ...p, amount: e.target.value }))}
+                inputMode="numeric"
+                value={formatAmount(payForm.amount)}
+                onChange={(e) => setPayForm((p) => ({ ...p, amount: e.target.value.replace(/\D/g, '') }))}
+                placeholder="0"
                 required
               />
             </div>

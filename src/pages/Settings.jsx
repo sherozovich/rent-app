@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Loader2, Save } from 'lucide-react'
+import { formatAmount } from '@/lib/utils'
 
 export default function Settings() {
   const [rates, setRates] = useState({ daily_rate: '', weekly_rate: '', monthly_rate: '' })
@@ -109,11 +110,11 @@ export default function Settings() {
                 <Label>Daily rate (per day)</Label>
                 <div className="relative">
                   <Input
-                    type="number"
-                    min="0"
-                    value={rates.daily_rate}
-                    onChange={(e) => setRates((r) => ({ ...r, daily_rate: e.target.value }))}
+                    inputMode="numeric"
+                    value={formatAmount(rates.daily_rate)}
+                    onChange={(e) => setRates((r) => ({ ...r, daily_rate: e.target.value.replace(/\D/g, '') }))}
                     className="pr-14"
+                    placeholder="0"
                     required
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">
@@ -125,11 +126,11 @@ export default function Settings() {
                 <Label>Weekly rate (flat)</Label>
                 <div className="relative">
                   <Input
-                    type="number"
-                    min="0"
-                    value={rates.weekly_rate}
-                    onChange={(e) => setRates((r) => ({ ...r, weekly_rate: e.target.value }))}
+                    inputMode="numeric"
+                    value={formatAmount(rates.weekly_rate)}
+                    onChange={(e) => setRates((r) => ({ ...r, weekly_rate: e.target.value.replace(/\D/g, '') }))}
                     className="pr-14"
+                    placeholder="0"
                     required
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">
@@ -141,11 +142,11 @@ export default function Settings() {
                 <Label>Monthly rate (flat)</Label>
                 <div className="relative">
                   <Input
-                    type="number"
-                    min="0"
-                    value={rates.monthly_rate}
-                    onChange={(e) => setRates((r) => ({ ...r, monthly_rate: e.target.value }))}
+                    inputMode="numeric"
+                    value={formatAmount(rates.monthly_rate)}
+                    onChange={(e) => setRates((r) => ({ ...r, monthly_rate: e.target.value.replace(/\D/g, '') }))}
                     className="pr-14"
+                    placeholder="0"
                     required
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">

@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, Check } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { generateAgreementNumber } from '@/lib/agreementNumber'
+import { formatUzPhone } from '@/lib/utils'
 import { useCouriers } from '@/hooks/useCouriers'
 import { useScooters } from '@/hooks/useScooters'
 import { Button } from '@/components/ui/button'
@@ -79,9 +80,9 @@ function Step1({ data, setData }) {
     }
   }
 
-  const filtered = couriers.filter((c) =>
-    c.full_name.toLowerCase().includes(search.toLowerCase())
-  )
+  const filtered = search.length > 0
+    ? couriers.filter((c) => c.full_name.toLowerCase().includes(search.toLowerCase()))
+    : []
 
   return (
     <div className="space-y-4">
@@ -95,6 +96,8 @@ function Step1({ data, setData }) {
 
       {loading ? (
         <p className="text-sm text-muted-foreground">Loading...</p>
+      ) : search.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Type a name to search...</p>
       ) : (
         <div className="space-y-2 max-h-64 overflow-y-auto">
           {filtered.length === 0 ? (
@@ -137,9 +140,9 @@ function Step1({ data, setData }) {
             required
           />
           <Input
-            placeholder="Phone"
+            placeholder="+998 XX XXX XX XX"
             value={form.phone}
-            onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))}
+            onChange={(e) => setForm((p) => ({ ...p, phone: formatUzPhone(e.target.value) }))}
             required
           />
           <div className="flex gap-2">
@@ -161,9 +164,9 @@ function Step2({ data, setData }) {
   const { scooters, loading } = useScooters()
   const [search, setSearch] = useState('')
   const available = scooters.filter((s) => s.status === 'available')
-  const filtered = available.filter((s) =>
-    s.plate.toLowerCase().includes(search.toLowerCase())
-  )
+  const filtered = search.length > 0
+    ? available.filter((s) => s.plate.toLowerCase().includes(search.toLowerCase()))
+    : []
 
   return (
     <div className="space-y-4">
@@ -177,6 +180,8 @@ function Step2({ data, setData }) {
         <p className="text-sm text-muted-foreground">Loading...</p>
       ) : available.length === 0 ? (
         <p className="text-sm text-muted-foreground">No scooters available right now.</p>
+      ) : search.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Type a plate to search...</p>
       ) : (
         <div className="space-y-2 max-h-64 overflow-y-auto">
           {filtered.length === 0 ? (
