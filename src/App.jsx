@@ -10,6 +10,7 @@ import Rentals from '@/pages/Rentals'
 import NewRental from '@/pages/NewRental'
 import RentalDetail from '@/pages/RentalDetail'
 import Settings from '@/pages/Settings'
+import Expenses from '@/pages/Expenses'
 import { loadTariffRates } from '@/lib/tariffRates'
 
 export default function App() {
@@ -29,6 +30,7 @@ export default function App() {
           <Route path="rentals/new" element={<NewRental />} />
           <Route path="rentals/:id" element={<RentalDetail />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="expenses" element={<Expenses />} />
         </Route>
       </Route>
     </Routes>

@@ -21,10 +21,12 @@ import {
   CircleCheck,
   Wrench,
   TrendingUp,
+  TrendingDown,
   Clock,
   AlertCircle,
   Activity,
   Plus,
+  Banknote,
 } from 'lucide-react'
 
 function StatCard({ label, value, icon: Icon, iconBg, iconColor, sub }) {
@@ -85,6 +87,7 @@ export default function Dashboard() {
         { data: activeRentals },
         { data: monthPayments },
         { data: allPayments },
+        { data: monthExpensesData },
       ] = await Promise.all([
         supabase.from('scooters').select('status'),
         supabase
@@ -94,6 +97,7 @@ export default function Dashboard() {
           .order('end_date', { ascending: true }),
         supabase.from('payments').select('amount').gte('paid_at', monthStart),
         supabase.from('payments').select('rental_id, amount'),
+        supabase.from('expenses').select('amount').gte('spent_at', monthStart),
       ])
 
       const total = scooters?.length ?? 0
@@ -101,7 +105,9 @@ export default function Dashboard() {
       const available = scooters?.filter((s) => s.status === 'available').length ?? 0
       const maintenance = scooters?.filter((s) => s.status === 'maintenance').length ?? 0
       const monthlyRevenue = (monthPayments || []).reduce((s, p) => s + Number(p.amount), 0)
-      setStats({ total, rented, available, maintenance, monthlyRevenue })
+      const monthlyExpenses = (monthExpensesData || []).reduce((s, e) => s + Number(e.amount), 0)
+      const netIncome = monthlyRevenue - monthlyExpenses
+      setStats({ total, rented, available, maintenance, monthlyRevenue, monthlyExpenses, netIncome })
 
       const rentalsArr = activeRentals || []
       const todayStr = now.toISOString().split('T')[0]
@@ -163,7 +169,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
         <StatCard
           label="Total Scooters"
           value={stats?.total}
@@ -198,11 +204,27 @@ export default function Dashboard() {
         />
         <StatCard
           label="Monthly Revenue"
-          value={stats?.monthlyRevenue != null ? stats.monthlyRevenue.toLocaleString() + ' ₸' : '—'}
+          value={stats?.monthlyRevenue != null ? stats.monthlyRevenue.toLocaleString() + ' UZS' : '—'}
           icon={TrendingUp}
           iconBg="bg-emerald-50"
           iconColor="text-emerald-600"
           sub="This month"
+        />
+        <StatCard
+          label="Expenses"
+          value={stats?.monthlyExpenses != null ? stats.monthlyExpenses.toLocaleString() + ' UZS' : '—'}
+          icon={TrendingDown}
+          iconBg="bg-red-50"
+          iconColor="text-red-500"
+          sub="This month"
+        />
+        <StatCard
+          label="Net Income"
+          value={stats?.netIncome != null ? stats.netIncome.toLocaleString() + ' UZS' : '—'}
+          icon={Banknote}
+          iconBg={stats?.netIncome >= 0 ? 'bg-green-50' : 'bg-orange-50'}
+          iconColor={stats?.netIncome >= 0 ? 'text-green-600' : 'text-orange-500'}
+          sub="Revenue − Expenses"
         />
       </div>
 

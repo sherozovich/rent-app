@@ -407,7 +407,7 @@ chore(db): add scooter status trigger
 |7    |Dashboard analytics + stat cards                       |Done      |
 |8    |Authentication (single-admin, localStorage session)    |Done      |
 |9    |Settings page (pricing + password change)              |Done      |
-|10   |Expenses page + dashboard integration                  |Planned   |
+|10   |Expenses page + dashboard integration                  |Done      |
 
 Always complete the current phase fully before starting the next.
 
