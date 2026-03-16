@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { useCouriers } from '@/hooks/useCouriers'
 import { formatUzPhone } from '@/lib/utils'
@@ -24,7 +24,49 @@ import {
 const emptyForm = {
   full_name: '', passport_no: '', phone: '',
   license_no: '', license_issue_date: '',
-  nationality: '', birth_country: '', birth_city: '',
+  birth_country: '', birth_city: '',
+}
+
+function SearchCombobox({ value, onChange, options, placeholder, disabled }) {
+  const [query, setQuery] = useState('')
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    function handler(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const display = open ? query : (value || '')
+  const filtered = open
+    ? options.filter(o => o.toLowerCase().includes(query.toLowerCase())).slice(0, 80)
+    : []
+
+  return (
+    <div ref={ref} className="relative">
+      <Input
+        value={display}
+        onFocus={() => { setOpen(true); setQuery('') }}
+        onChange={e => { setQuery(e.target.value); onChange('') }}
+        placeholder={placeholder}
+        disabled={disabled}
+        autoComplete="off"
+      />
+      {open && filtered.length > 0 && (
+        <div className="absolute z-50 w-full mt-1 max-h-48 overflow-y-auto rounded-md border bg-white shadow-md">
+          {filtered.map(o => (
+            <button key={o} type="button"
+              className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted"
+              onMouseDown={e => e.preventDefault()}
+              onClick={() => { onChange(o); setQuery(o); setOpen(false) }}>
+              {o}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
 
 export default function Couriers() {
@@ -74,7 +116,6 @@ export default function Couriers() {
       phone: formatUzPhone(courier.phone ?? ''),
       license_no: courier.license_no ?? '',
       license_issue_date: courier.license_issue_date ?? '',
-      nationality: courier.nationality ?? '',
       birth_country: courier.birth_country ?? '',
       birth_city: courier.birth_city ?? '',
     })
@@ -259,50 +300,23 @@ export default function Couriers() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="nationality">Nationality</Label>
-              <select
-                id="nationality"
-                name="nationality"
-                value={form.nationality}
-                onChange={handleChange}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                <option value="">Select nationality</option>
-                {countries.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="birth_country">Birth Country</Label>
-              <select
-                id="birth_country"
-                name="birth_country"
+              <Label>Birth Country</Label>
+              <SearchCombobox
                 value={form.birth_country}
-                onChange={(e) => setForm((p) => ({ ...p, birth_country: e.target.value, birth_city: '' }))}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                <option value="">Select country</option>
-                {countries.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
+                onChange={(v) => setForm((p) => ({ ...p, birth_country: v, birth_city: '' }))}
+                options={countries}
+                placeholder="Search country..."
+              />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="birth_city">Birth City</Label>
-              <select
-                id="birth_city"
-                name="birth_city"
+              <Label>Birth City</Label>
+              <SearchCombobox
                 value={form.birth_city}
-                onChange={handleChange}
+                onChange={(v) => setForm((p) => ({ ...p, birth_city: v }))}
+                options={cities}
+                placeholder="Search city..."
                 disabled={!form.birth_country}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:opacity-50"
-              >
-                <option value="">Select city</option>
-                {cities.map((city) => (
-                  <option key={city} value={city}>{city}</option>
-                ))}
-              </select>
+              />
             </div>
             {formError && (
               <p className="text-sm text-destructive">{formError}</p>

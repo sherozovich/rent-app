@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, Check } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
@@ -16,6 +16,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import StatusBadge from '@/components/StatusBadge'
 
 const STEPS = ['Courier', 'Scooter', 'Details', 'Review', 'Activate']
@@ -60,21 +67,95 @@ function StepIndicator({ current }) {
   )
 }
 
+// ─── SearchCombobox ────────────────────────────────────────────────────────────
+function SearchCombobox({ value, onChange, options, placeholder, disabled }) {
+  const [query, setQuery] = useState('')
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    function handler(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const display = open ? query : (value || '')
+  const filtered = open
+    ? options.filter(o => o.toLowerCase().includes(query.toLowerCase())).slice(0, 80)
+    : []
+
+  return (
+    <div ref={ref} className="relative">
+      <Input
+        value={display}
+        onFocus={() => { setOpen(true); setQuery('') }}
+        onChange={e => { setQuery(e.target.value); onChange('') }}
+        placeholder={placeholder}
+        disabled={disabled}
+        autoComplete="off"
+      />
+      {open && filtered.length > 0 && (
+        <div className="absolute z-50 w-full mt-1 max-h-48 overflow-y-auto rounded-md border bg-white shadow-md">
+          {filtered.map(o => (
+            <button key={o} type="button"
+              className="w-full text-left px-3 py-1.5 text-sm hover:bg-muted"
+              onMouseDown={e => e.preventDefault()}
+              onClick={() => { onChange(o); setQuery(o); setOpen(false) }}>
+              {o}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+const emptyQuickForm = {
+  full_name: '', passport_no: '', phone: '',
+  license_no: '', license_issue_date: '',
+  birth_country: '', birth_city: '',
+}
+
 // ─── Step 1: Select or quick-add courier ─────────────────────────────────────
 function Step1({ data, setData }) {
   const { couriers, loading, addCourier } = useCouriers()
-  const [showAdd, setShowAdd] = useState(false)
-  const [form, setForm] = useState({ full_name: '', passport_no: '', phone: '' })
+  const [addOpen, setAddOpen] = useState(false)
+  const [form, setForm] = useState(emptyQuickForm)
   const [saving, setSaving] = useState(false)
+  const [formError, setFormError] = useState(null)
   const [search, setSearch] = useState('')
+  const [countries, setCountries] = useState([])
+  const [cities, setCities] = useState([])
+
+  useEffect(() => {
+    fetch('https://restcountries.com/v3.1/all?fields=name')
+      .then(r => r.json())
+      .then(data => setCountries(data.map(c => c.name.common).sort()))
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    if (!form.birth_country) { setCities([]); return }
+    fetch('https://countriesnow.space/api/v0.1/countries/cities', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ country: form.birth_country }),
+    })
+      .then(r => r.json())
+      .then(d => setCities(d.data || []))
+      .catch(() => setCities([]))
+  }, [form.birth_country])
 
   async function handleQuickAdd(e) {
     e.preventDefault()
     setSaving(true)
+    setFormError(null)
     try {
       await addCourier(form)
-      setShowAdd(false)
-      setForm({ full_name: '', passport_no: '', phone: '' })
+      setAddOpen(false)
+      setForm(emptyQuickForm)
+    } catch (err) {
+      setFormError(err.message)
     } finally {
       setSaving(false)
     }
@@ -120,41 +201,92 @@ function Step1({ data, setData }) {
         </div>
       )}
 
-      {!showAdd ? (
-        <Button variant="outline" size="sm" onClick={() => setShowAdd(true)}>
-          + Quick Add Courier
-        </Button>
-      ) : (
-        <form onSubmit={handleQuickAdd} className="border rounded-lg p-4 space-y-3 bg-muted/30">
-          <p className="text-sm font-medium">New Courier</p>
-          <Input
-            placeholder="Full Name"
-            value={form.full_name}
-            onChange={(e) => setForm((p) => ({ ...p, full_name: e.target.value }))}
-            required
-          />
-          <Input
-            placeholder="Passport No"
-            value={form.passport_no}
-            onChange={(e) => setForm((p) => ({ ...p, passport_no: e.target.value }))}
-            required
-          />
-          <Input
-            placeholder="+998 XX XXX XX XX"
-            value={form.phone}
-            onChange={(e) => setForm((p) => ({ ...p, phone: formatUzPhone(e.target.value) }))}
-            required
-          />
-          <div className="flex gap-2">
-            <Button type="submit" size="sm" disabled={saving}>
-              {saving ? 'Saving...' : 'Add'}
-            </Button>
-            <Button type="button" size="sm" variant="outline" onClick={() => setShowAdd(false)}>
-              Cancel
-            </Button>
-          </div>
-        </form>
-      )}
+      <Button variant="outline" size="sm" onClick={() => { setForm(emptyQuickForm); setFormError(null); setAddOpen(true) }}>
+        + Quick Add Courier
+      </Button>
+
+      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add Courier</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleQuickAdd} className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>Full Name</Label>
+              <Input
+                value={form.full_name}
+                onChange={(e) => setForm((p) => ({ ...p, full_name: e.target.value }))}
+                placeholder="e.g. Ivan Petrov"
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Passport No</Label>
+              <Input
+                value={form.passport_no}
+                onChange={(e) => setForm((p) => ({ ...p, passport_no: e.target.value.toUpperCase() }))}
+                placeholder="e.g. AB1234567"
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Phone</Label>
+              <Input
+                value={form.phone}
+                onChange={(e) => setForm((p) => ({ ...p, phone: formatUzPhone(e.target.value) }))}
+                placeholder="+998 XX XXX XX XX"
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Driver's License No</Label>
+              <Input
+                value={form.license_no}
+                onChange={(e) => setForm((p) => ({ ...p, license_no: e.target.value.toUpperCase() }))}
+                placeholder="e.g. AA123456"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>License Issue Date</Label>
+              <Input
+                type="date"
+                value={form.license_issue_date}
+                onChange={(e) => setForm((p) => ({ ...p, license_issue_date: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Birth Country</Label>
+              <SearchCombobox
+                value={form.birth_country}
+                onChange={(v) => setForm((p) => ({ ...p, birth_country: v, birth_city: '' }))}
+                options={countries}
+                placeholder="Search country..."
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Birth City</Label>
+              <SearchCombobox
+                value={form.birth_city}
+                onChange={(v) => setForm((p) => ({ ...p, birth_city: v }))}
+                options={cities}
+                placeholder="Search city..."
+                disabled={!form.birth_country}
+              />
+            </div>
+            {formError && (
+              <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{formError}</p>
+            )}
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setAddOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={saving}>
+                {saving ? 'Saving...' : 'Add Courier'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
