@@ -203,11 +203,19 @@ export default function RentalDetail() {
 
       {/* Payments */}
       <div className="rounded-lg border bg-card p-5 mb-4">
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-            Платежи
-          </p>
-          <div className="flex items-center gap-3 flex-wrap">
+        <div className="mb-3">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              Платежи
+            </p>
+            {rental.status === 'active' && (
+              <Button size="sm" onClick={() => setPayOpen(true)}>
+                <Plus size={14} className="mr-1" />
+                Добавить
+              </Button>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
             <span className="text-sm font-medium">
               К оплате:{' '}
               <span className="font-mono">{totalCharged.toLocaleString()}</span>
@@ -223,12 +231,6 @@ export default function RentalDetail() {
             )}
             {balance <= 0 && totalCharged > 0 && (
               <span className="text-sm text-green-700 font-medium">Оплачено полностью</span>
-            )}
-            {rental.status === 'active' && (
-              <Button size="sm" onClick={() => setPayOpen(true)}>
-                <Plus size={14} className="mr-1" />
-                Добавить
-              </Button>
             )}
           </div>
         </div>
