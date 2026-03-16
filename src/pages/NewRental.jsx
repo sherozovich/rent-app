@@ -115,6 +115,7 @@ const emptyQuickForm = {
   full_name: '', passport_no: '', phone: '',
   license_no: '', license_issue_date: '',
   birth_country: '', birth_city: '',
+  address: '',
 }
 
 // ─── Step 1: Select or quick-add courier ─────────────────────────────────────
@@ -226,6 +227,14 @@ function Step1({ data, setData }) {
                 onChange={(e) => setForm((p) => ({ ...p, phone: formatUzPhone(e.target.value) }))}
                 placeholder="+998 XX XXX XX XX"
                 required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Адрес</Label>
+              <Input
+                value={form.address}
+                onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))}
+                placeholder="напр. Ул. Навои, д. 12, кв. 5"
               />
             </div>
             <div className="space-y-1.5">
