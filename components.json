@@ -13,8 +13,5 @@
   "aliases": {
     "components": "@/components",
     "utils": "@/lib/utils"
-  },
-  "registries": {
-    "@ss-blocks": "https://shadcnstudio.com/registry"
   }
 }

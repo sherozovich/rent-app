@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, Loader2 } from 'lucide-react'
 import { useScooters } from '@/hooks/useScooters'
 import StatusBadge from '@/components/StatusBadge'
 import { Button } from '@/components/ui/button'
@@ -99,11 +99,14 @@ export default function Scooters() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Scooters</h1>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-6">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900">Скутеры</h1>
+          <p className="text-sm text-gray-500 mt-1">Управление парком скутеров</p>
+        </div>
         <Button onClick={openAdd} className="w-full md:w-auto">
           <Plus size={16} className="mr-2" />
-          Add Scooter
+          Добавить скутер
         </Button>
       </div>
 
@@ -112,18 +115,20 @@ export default function Scooters() {
       )}
 
       {loading ? (
-        <p className="text-muted-foreground text-sm">Loading...</p>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 size={14} className="animate-spin" /> Загрузка...
+        </div>
       ) : scooters.length === 0 ? (
-        <p className="text-muted-foreground text-sm">No scooters yet. Add the first one.</p>
+        <p className="text-muted-foreground text-sm">Скутеры не добавлены. Добавьте первый.</p>
       ) : (
-        <div className="rounded-md border overflow-x-auto">
+        <div className="rounded-xl border border-gray-200 overflow-x-auto bg-white shadow-sm">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Model</TableHead>
-                <TableHead>Plate</TableHead>
+              <TableRow className="bg-gray-50">
+                <TableHead>Модель</TableHead>
+                <TableHead>Номер</TableHead>
                 <TableHead>VIN</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>Статус</TableHead>
                 <TableHead className="w-24" />
               </TableRow>
             </TableHeader>
@@ -158,24 +163,24 @@ export default function Scooters() {
       <Dialog open={!!deleteTarget} onOpenChange={(v) => { if (!v) setDeleteTarget(null) }}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Delete Scooter</DialogTitle>
+            <DialogTitle>Удалить скутер</DialogTitle>
           </DialogHeader>
           {deleteTarget?.status !== 'available' ? (
             <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">
-              Cannot delete <span className="font-medium">{deleteTarget?.model} — {deleteTarget?.plate}</span> — status is <span className="font-medium">{deleteTarget?.status}</span>. Only available scooters can be deleted.
+              Нельзя удалить <span className="font-medium">{deleteTarget?.model} — {deleteTarget?.plate}</span> — статус <span className="font-medium">{deleteTarget?.status}</span>. Удалять можно только доступные скутеры.
             </p>
           ) : (
             <p className="text-sm text-gray-600">
-              Are you sure you want to delete <span className="font-medium">{deleteTarget?.model} — {deleteTarget?.plate}</span>? This cannot be undone.
+              Удалить <span className="font-medium">{deleteTarget?.model} — {deleteTarget?.plate}</span>? Это нельзя отменить.
             </p>
           )}
           {deleteError && (
             <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{deleteError}</p>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleting}>Cancel</Button>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleting}>Отмена</Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deleting || deleteTarget?.status !== 'available'}>
-              {deleting ? 'Deleting...' : 'Delete'}
+              {deleting ? 'Удаление...' : 'Удалить'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -184,17 +189,17 @@ export default function Scooters() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{editTarget ? 'Edit Scooter' : 'Add Scooter'}</DialogTitle>
+            <DialogTitle>{editTarget ? 'Редактировать скутер' : 'Добавить скутер'}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="model">Model</Label>
+              <Label htmlFor="model">Модель</Label>
               <Input
                 id="model"
                 name="model"
                 value={form.model}
                 onChange={handleChange}
-                placeholder="e.g. Xiaomi Mi 365"
+                placeholder="напр. Xiaomi Mi 365"
                 required
               />
             </div>
@@ -205,23 +210,23 @@ export default function Scooters() {
                 name="vin"
                 value={form.vin}
                 onChange={handleChange}
-                placeholder="e.g. 1HGBH41JXMN109186"
+                placeholder="напр. 1HGBH41JXMN109186"
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="plate">Plate</Label>
+              <Label htmlFor="plate">Номерной знак</Label>
               <Input
                 id="plate"
                 name="plate"
                 value={form.plate}
                 onChange={handleChange}
-                placeholder="e.g. AA1234BB"
+                placeholder="напр. AA1234BB"
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
+              <Label htmlFor="status">Статус</Label>
               <Select
                 value={form.status}
                 onValueChange={(val) => setForm((prev) => ({ ...prev, status: val }))}
@@ -230,9 +235,9 @@ export default function Scooters() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="available">Available</SelectItem>
-                  <SelectItem value="rented">Rented</SelectItem>
-                  <SelectItem value="maintenance">Maintenance</SelectItem>
+                  <SelectItem value="available">Доступен</SelectItem>
+                  <SelectItem value="rented">Арендован</SelectItem>
+                  <SelectItem value="maintenance">Обслуживание</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -241,10 +246,10 @@ export default function Scooters() {
             )}
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                Cancel
+                Отмена
               </Button>
               <Button type="submit" disabled={saving}>
-                {saving ? 'Saving...' : editTarget ? 'Save Changes' : 'Add Scooter'}
+                {saving ? 'Сохранение...' : editTarget ? 'Сохранить' : 'Добавить'}
               </Button>
             </DialogFooter>
           </form>

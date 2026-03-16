@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/dialog'
 import StatusBadge from '@/components/StatusBadge'
 
-const STEPS = ['Courier', 'Scooter', 'Details', 'Review', 'Activate']
+const STEPS = ['Курьер', 'Скутер', 'Условия', 'Проверка', 'Готово']
 
 // Compute end_date based on tariff and days
 function computeEndDate(startDate, tariff, days) {
@@ -167,22 +167,22 @@ function Step1({ data, setData }) {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold">Select Courier</h2>
+      <h2 className="text-lg font-semibold">Выберите курьера</h2>
 
       <Input
-        placeholder="Search by name..."
+        placeholder="Поиск по имени..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
 
       {loading ? (
-        <p className="text-sm text-muted-foreground">Loading...</p>
+        <p className="text-sm text-muted-foreground">Загрузка...</p>
       ) : search.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Type a name to search...</p>
+        <p className="text-sm text-muted-foreground">Введите имя для поиска...</p>
       ) : (
         <div className="space-y-2 max-h-64 overflow-y-auto">
           {filtered.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No couriers found.</p>
+            <p className="text-sm text-muted-foreground">Курьеры не найдены.</p>
           ) : filtered.map((c) => (
             <button
               key={c.id}
@@ -202,35 +202,35 @@ function Step1({ data, setData }) {
       )}
 
       <Button variant="outline" size="sm" onClick={() => { setForm(emptyQuickForm); setFormError(null); setAddOpen(true) }}>
-        + Quick Add Courier
+        + Добавить курьера
       </Button>
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Courier</DialogTitle>
+            <DialogTitle>Добавить курьера</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleQuickAdd} className="space-y-3">
             <div className="space-y-1.5">
-              <Label>Full Name</Label>
+              <Label>ФИО</Label>
               <Input
                 value={form.full_name}
                 onChange={(e) => setForm((p) => ({ ...p, full_name: e.target.value }))}
-                placeholder="e.g. Ivan Petrov"
+                placeholder="напр. Иванов Иван"
                 required
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Passport No</Label>
+              <Label>Номер паспорта</Label>
               <Input
                 value={form.passport_no}
                 onChange={(e) => setForm((p) => ({ ...p, passport_no: e.target.value.toUpperCase() }))}
-                placeholder="e.g. AB1234567"
+                placeholder="напр. AB1234567"
                 required
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Phone</Label>
+              <Label>Телефон</Label>
               <Input
                 value={form.phone}
                 onChange={(e) => setForm((p) => ({ ...p, phone: formatUzPhone(e.target.value) }))}
@@ -239,15 +239,15 @@ function Step1({ data, setData }) {
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Driver's License No</Label>
+              <Label>Номер прав</Label>
               <Input
                 value={form.license_no}
                 onChange={(e) => setForm((p) => ({ ...p, license_no: e.target.value.toUpperCase() }))}
-                placeholder="e.g. AA123456"
+                placeholder="напр. AA123456"
               />
             </div>
             <div className="space-y-1.5">
-              <Label>License Issue Date</Label>
+              <Label>Дата выдачи прав</Label>
               <Input
                 type="date"
                 value={form.license_issue_date}
@@ -255,21 +255,21 @@ function Step1({ data, setData }) {
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Birth Country</Label>
+              <Label>Страна рождения</Label>
               <SearchCombobox
                 value={form.birth_country}
                 onChange={(v) => setForm((p) => ({ ...p, birth_country: v, birth_city: '' }))}
                 options={countries}
-                placeholder="Search country..."
+                placeholder="Поиск страны..."
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Birth City</Label>
+              <Label>Город рождения</Label>
               <SearchCombobox
                 value={form.birth_city}
                 onChange={(v) => setForm((p) => ({ ...p, birth_city: v }))}
                 options={cities}
-                placeholder="Search city..."
+                placeholder="Поиск города..."
                 disabled={!form.birth_country}
               />
             </div>
@@ -278,10 +278,10 @@ function Step1({ data, setData }) {
             )}
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setAddOpen(false)}>
-                Cancel
+                Отмена
               </Button>
               <Button type="submit" disabled={saving}>
-                {saving ? 'Saving...' : 'Add Courier'}
+                {saving ? 'Сохранение...' : 'Добавить'}
               </Button>
             </DialogFooter>
           </form>
@@ -302,22 +302,22 @@ function Step2({ data, setData }) {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold">Select Scooter</h2>
+      <h2 className="text-lg font-semibold">Выберите скутер</h2>
       <Input
-        placeholder="Search by plate..."
+        placeholder="Поиск по номеру..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
       {loading ? (
-        <p className="text-sm text-muted-foreground">Loading...</p>
+        <p className="text-sm text-muted-foreground">Загрузка...</p>
       ) : available.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No scooters available right now.</p>
+        <p className="text-sm text-muted-foreground">Нет доступных скутеров.</p>
       ) : search.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Type a plate to search...</p>
+        <p className="text-sm text-muted-foreground">Введите номер для поиска...</p>
       ) : (
         <div className="space-y-2 max-h-64 overflow-y-auto">
           {filtered.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No scooters found.</p>
+            <p className="text-sm text-muted-foreground">Скутеры не найдены.</p>
           ) : filtered.map((s) => (
             <button
               key={s.id}
@@ -352,25 +352,25 @@ function Step3({ data, setData }) {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold">Rental Details</h2>
+      <h2 className="text-lg font-semibold">Условия аренды</h2>
 
       <div className="space-y-2">
-        <Label>Tariff</Label>
+        <Label>Тариф</Label>
         <Select value={tariff} onValueChange={(v) => set('tariff', v)}>
           <SelectTrigger>
-            <SelectValue placeholder="Select tariff" />
+            <SelectValue placeholder="Выберите тариф" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="daily">Daily (min 3 days)</SelectItem>
-            <SelectItem value="weekly">Weekly (7 days)</SelectItem>
-            <SelectItem value="monthly">Monthly (30 days)</SelectItem>
+            <SelectItem value="daily">Суточный (мин. 3 дня)</SelectItem>
+            <SelectItem value="weekly">Еженедельный (7 дней)</SelectItem>
+            <SelectItem value="monthly">Ежемесячный (30 дней)</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       {tariff === 'daily' && (
         <div className="space-y-2">
-          <Label>Number of Days (min 3)</Label>
+          <Label>Количество дней (мин. 3)</Label>
           <Input
             type="number"
             min={3}
@@ -381,7 +381,7 @@ function Step3({ data, setData }) {
       )}
 
       <div className="space-y-2">
-        <Label>Start Date</Label>
+        <Label>Дата начала</Label>
         <Input
           type="date"
           value={start_date}
@@ -391,7 +391,7 @@ function Step3({ data, setData }) {
 
       {endDate && (
         <p className="text-sm text-muted-foreground">
-          End date: <span className="font-medium text-foreground">{endDate}</span>
+          Дата окончания: <span className="font-medium text-foreground">{endDate}</span>
         </p>
       )}
     </div>
@@ -402,20 +402,21 @@ function Step3({ data, setData }) {
 function Step4({ data }) {
   const endDate = computeEndDate(data.start_date, data.tariff, data.days)
 
+  const tariffLabels = { daily: 'Суточный', weekly: 'Еженедельный', monthly: 'Ежемесячный' }
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold">Review</h2>
+      <h2 className="text-lg font-semibold">Проверка</h2>
       <div className="rounded-lg border divide-y text-sm">
-        <Row label="Courier" value={data.courier?.full_name} />
-        <Row label="Phone" value={data.courier?.phone} />
-        <Row label="Scooter" value={`${data.scooter?.model} — ${data.scooter?.plate}`} />
+        <Row label="Курьер" value={data.courier?.full_name} />
+        <Row label="Телефон" value={data.courier?.phone} />
+        <Row label="Скутер" value={`${data.scooter?.model} — ${data.scooter?.plate}`} />
         <Row label="VIN" value={data.scooter?.vin} />
-        <Row label="Tariff" value={data.tariff} />
-        {data.tariff === 'daily' && <Row label="Days" value={data.days} />}
-        <Row label="Start" value={data.start_date} />
-        <Row label="End" value={endDate} />
-        <Row label="License No" value={data.license_no} />
-        <Row label="License Issued" value={data.license_issue_date} />
+        <Row label="Тариф" value={tariffLabels[data.tariff] ?? data.tariff} />
+        {data.tariff === 'daily' && <Row label="Дней" value={data.days} />}
+        <Row label="Начало" value={data.start_date} />
+        <Row label="Окончание" value={endDate} />
+        <Row label="Номер прав" value={data.license_no} />
+        <Row label="Дата выдачи прав" value={data.license_issue_date} />
       </div>
     </div>
   )
@@ -437,11 +438,11 @@ function Step5({ agreementNo }) {
       <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
         <Check size={32} className="text-green-600" />
       </div>
-      <h2 className="text-lg font-semibold">Rental Created</h2>
-      <p className="text-muted-foreground text-sm">Agreement number</p>
+      <h2 className="text-lg font-semibold">Аренда создана</h2>
+      <p className="text-muted-foreground text-sm">Номер договора</p>
       <p className="text-2xl font-bold tracking-wide">{agreementNo}</p>
       <p className="text-sm text-muted-foreground">
-        Print the agreement and doverenost from the Rental Detail page.
+        Распечатайте договор и доверенность на странице аренды.
       </p>
     </div>
   )
@@ -528,7 +529,7 @@ export default function NewRental() {
         <Button variant="ghost" size="icon" onClick={() => navigate('/rentals')}>
           <ChevronLeft size={18} />
         </Button>
-        <h1 className="text-2xl font-bold">New Rental</h1>
+        <h1 className="text-2xl font-bold">Новая аренда</h1>
       </div>
 
       <StepIndicator current={step} />
@@ -553,23 +554,23 @@ export default function NewRental() {
                 disabled={submitting}
               >
                 <ChevronLeft size={16} className="mr-1" />
-                {step === 0 ? 'Cancel' : 'Back'}
+                {step === 0 ? 'Отмена' : 'Назад'}
               </Button>
 
               {step < 3 ? (
                 <Button onClick={() => setStep((s) => s + 1)} disabled={!canNext()}>
-                  Next
+                  Далее
                   <ChevronRight size={16} className="ml-1" />
                 </Button>
               ) : (
                 <Button onClick={handleConfirm} disabled={submitting}>
-                  {submitting ? 'Creating...' : 'Confirm & Create'}
+                  {submitting ? 'Создание...' : 'Подтвердить'}
                 </Button>
               )}
             </>
           ) : (
             <Button className="w-full" onClick={() => navigate(`/rentals/${createdId}`)}>
-              View Rental Detail
+              Открыть аренду
             </Button>
           )}
         </div>

@@ -50,9 +50,9 @@ export default function Settings() {
         if (error) throw error
       }
       await loadTariffRates()
-      setRatesMsg({ type: 'success', text: 'Rates saved successfully' })
+      setRatesMsg({ type: 'success', text: 'Тарифы сохранены' })
     } catch {
-      setRatesMsg({ type: 'error', text: 'Failed to save rates' })
+      setRatesMsg({ type: 'error', text: 'Не удалось сохранить тарифы' })
     } finally {
       setRatesSaving(false)
     }
@@ -62,11 +62,11 @@ export default function Settings() {
     e.preventDefault()
     setPwdMsg(null)
     if (newPassword !== confirmPassword) {
-      setPwdMsg({ type: 'error', text: 'New passwords do not match' })
+      setPwdMsg({ type: 'error', text: 'Пароли не совпадают' })
       return
     }
     if (newPassword.length < 4) {
-      setPwdMsg({ type: 'error', text: 'Password must be at least 4 characters' })
+      setPwdMsg({ type: 'error', text: 'Пароль должен быть не менее 4 символов' })
       return
     }
     setPwdSaving(true)
@@ -78,9 +78,9 @@ export default function Settings() {
       if (error) throw error
       setNewPassword('')
       setConfirmPassword('')
-      setPwdMsg({ type: 'success', text: 'Password changed successfully' })
+      setPwdMsg({ type: 'success', text: 'Пароль изменён' })
     } catch {
-      setPwdMsg({ type: 'error', text: 'Failed to change password' })
+      setPwdMsg({ type: 'error', text: 'Не удалось изменить пароль' })
     } finally {
       setPwdSaving(false)
     }
@@ -89,25 +89,25 @@ export default function Settings() {
   return (
     <div className="max-w-2xl space-y-8">
       <div>
-        <h1 className="text-xl font-semibold text-gray-900">Settings</h1>
-        <p className="text-sm text-gray-500 mt-1">Manage pricing and account settings</p>
+        <h1 className="text-xl font-semibold text-gray-900">Настройки</h1>
+        <p className="text-sm text-gray-500 mt-1">Управление ценами и учётной записью</p>
       </div>
 
       {/* Pricing */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="text-base font-semibold text-gray-900 mb-1">Pricing</h2>
+        <h2 className="text-base font-semibold text-gray-900 mb-1">Цены</h2>
         <p className="text-sm text-gray-500 mb-5">
-          Daily rate is charged per day. Weekly and monthly rates are flat fees.
+          Суточный тариф — за каждый день. Еженедельный и ежемесячный — фиксированная сумма.
         </p>
         {ratesLoading ? (
           <div className="flex items-center gap-2 text-sm text-gray-500">
-            <Loader2 size={14} className="animate-spin" /> Loading...
+            <Loader2 size={14} className="animate-spin" /> Загрузка...
           </div>
         ) : (
           <form onSubmit={saveRates} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-1.5">
-                <Label>Daily rate (per day)</Label>
+                <Label>Суточный тариф (за день)</Label>
                 <div className="relative">
                   <Input
                     inputMode="numeric"
@@ -123,7 +123,7 @@ export default function Settings() {
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label>Weekly rate (flat)</Label>
+                <Label>Еженедельный тариф</Label>
                 <div className="relative">
                   <Input
                     inputMode="numeric"
@@ -139,7 +139,7 @@ export default function Settings() {
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label>Monthly rate (flat)</Label>
+                <Label>Ежемесячный тариф</Label>
                 <div className="relative">
                   <Input
                     inputMode="numeric"
@@ -169,7 +169,7 @@ export default function Settings() {
             <Button type="submit" disabled={ratesSaving} className="w-full md:w-auto">
               {ratesSaving && <Loader2 size={14} className="mr-2 animate-spin" />}
               <Save size={14} className="mr-2" />
-              Save Rates
+              Сохранить тарифы
             </Button>
           </form>
         )}
@@ -177,10 +177,10 @@ export default function Settings() {
 
       {/* Change Password */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h2 className="text-base font-semibold text-gray-900 mb-5">Change Password</h2>
+        <h2 className="text-base font-semibold text-gray-900 mb-5">Сменить пароль</h2>
         <form onSubmit={changePassword} className="space-y-4 max-w-sm">
           <div className="space-y-1.5">
-            <Label htmlFor="newPwd">New password</Label>
+            <Label htmlFor="newPwd">Новый пароль</Label>
             <Input
               id="newPwd"
               type="password"
@@ -190,7 +190,7 @@ export default function Settings() {
             />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="confirmPwd">Confirm new password</Label>
+            <Label htmlFor="confirmPwd">Подтвердите пароль</Label>
             <Input
               id="confirmPwd"
               type="password"
@@ -211,7 +211,7 @@ export default function Settings() {
           <Button type="submit" disabled={pwdSaving} className="w-full md:w-auto">
             {pwdSaving && <Loader2 size={14} className="mr-2 animate-spin" />}
             <Save size={14} className="mr-2" />
-            Change Password
+            Сменить пароль
           </Button>
         </form>
       </div>

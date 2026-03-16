@@ -31,10 +31,10 @@ export default function Login() {
         localStorage.setItem('dokon_authed', 'true')
         navigate('/')
       } else {
-        setError('Username or password incorrect')
+        setError('Неверный логин или пароль')
       }
     } catch {
-      setError('Connection error. Try again.')
+      setError('Ошибка подключения. Попробуйте снова.')
     } finally {
       setLoading(false)
     }
@@ -48,14 +48,14 @@ export default function Login() {
             <Zap size={22} className="text-white" fill="white" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">DOKON</h1>
-          <p className="text-sm text-gray-500 mt-1">Scooter Rental Manager</p>
+          <p className="text-sm text-gray-500 mt-1">Управление арендой скутеров</p>
         </div>
 
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-          <h2 className="text-base font-semibold text-gray-900 mb-5">Sign in</h2>
+          <h2 className="text-base font-semibold text-gray-900 mb-5">Войти</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="username">Логин</Label>
               <Input
                 id="username"
                 type="text"
@@ -67,7 +67,7 @@ export default function Login() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Пароль</Label>
               <Input
                 id="password"
                 type="password"
@@ -85,7 +85,7 @@ export default function Login() {
 
             <Button type="submit" className="w-full" disabled={loading}>
               {loading && <Loader2 size={14} className="mr-2 animate-spin" />}
-              Sign in
+              Войти
             </Button>
           </form>
         </div>

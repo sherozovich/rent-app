@@ -29,6 +29,7 @@ import { Plus, Trash2, Loader2, TrendingDown } from 'lucide-react'
 import { formatAmount } from '@/lib/utils'
 
 const CATEGORIES = ['maintenance', 'fuel', 'repair', 'other']
+const CATEGORY_LABELS = { maintenance: 'Обслуживание', fuel: 'Топливо', repair: 'Ремонт', other: 'Прочее' }
 
 const CATEGORY_COLORS = {
   maintenance: 'bg-amber-100 text-amber-700',
@@ -117,8 +118,8 @@ export default function Expenses() {
     <div className="max-w-4xl space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-gray-900">Expenses</h1>
-          <p className="text-sm text-gray-500 mt-1">Track operational costs</p>
+          <h1 className="text-xl font-semibold text-gray-900">Расходы</h1>
+          <p className="text-sm text-gray-500 mt-1">Учёт операционных расходов</p>
         </div>
         <Button
           onClick={() => {
@@ -129,7 +130,7 @@ export default function Expenses() {
           className="w-full md:w-auto"
         >
           <Plus size={14} className="mr-2" />
-          Add Expense
+          Добавить расход
         </Button>
       </div>
 
@@ -137,7 +138,7 @@ export default function Expenses() {
       <div className="bg-white rounded-xl border border-gray-200 p-5 flex items-center justify-between shadow-sm">
         <div>
           <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">
-            Total This Month
+            Итого за месяц
           </p>
           <p className="text-2xl font-bold text-gray-900 mt-1">
             {totalThisMonth.toLocaleString()} UZS
@@ -155,10 +156,10 @@ export default function Expenses() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All categories</SelectItem>
+            <SelectItem value="all">Все категории</SelectItem>
             {CATEGORIES.map((c) => (
-              <SelectItem key={c} value={c} className="capitalize">
-                {c}
+              <SelectItem key={c} value={c}>
+                {CATEGORY_LABELS[c] ?? c}
               </SelectItem>
             ))}
           </SelectContent>
@@ -174,19 +175,19 @@ export default function Expenses() {
       {/* Table */}
       {loading ? (
         <div className="flex items-center gap-2 text-sm text-gray-500">
-          <Loader2 size={14} className="animate-spin" /> Loading...
+          <Loader2 size={14} className="animate-spin" /> Загрузка...
         </div>
       ) : expenses.length === 0 ? (
-        <p className="text-sm text-gray-400">No expenses found.</p>
+        <p className="text-sm text-gray-400">Расходы не найдены.</p>
       ) : (
         <div className="rounded-xl border border-gray-200 overflow-x-auto bg-white shadow-sm">
           <Table>
             <TableHeader>
               <TableRow className="bg-gray-50">
-                <TableHead>Date</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Amount</TableHead>
+                <TableHead>Дата</TableHead>
+                <TableHead>Категория</TableHead>
+                <TableHead>Описание</TableHead>
+                <TableHead>Сумма</TableHead>
                 <TableHead className="w-12" />
               </TableRow>
             </TableHeader>
@@ -196,9 +197,9 @@ export default function Expenses() {
                   <TableCell className="text-gray-600 text-sm">{exp.spent_at}</TableCell>
                   <TableCell>
                     <span
-                      className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${CATEGORY_COLORS[exp.category] ?? 'bg-gray-100 text-gray-700'}`}
+                      className={`text-xs font-medium px-2 py-0.5 rounded-full ${CATEGORY_COLORS[exp.category] ?? 'bg-gray-100 text-gray-700'}`}
                     >
-                      {exp.category}
+                      {CATEGORY_LABELS[exp.category] ?? exp.category}
                     </span>
                   </TableCell>
                   <TableCell className="text-gray-700">{exp.description}</TableCell>
@@ -226,11 +227,11 @@ export default function Expenses() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Expense</DialogTitle>
+            <DialogTitle>Добавить расход</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleAdd} className="space-y-4">
             <div className="space-y-1.5">
-              <Label>Amount (UZS)</Label>
+              <Label>Сумма (UZS)</Label>
               <Input
                 inputMode="numeric"
                 value={formatAmount(form.amount)}
@@ -240,7 +241,7 @@ export default function Expenses() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Category</Label>
+              <Label>Категория</Label>
               <Select
                 value={form.category}
                 onValueChange={(v) => setForm((f) => ({ ...f, category: v }))}
@@ -250,24 +251,24 @@ export default function Expenses() {
                 </SelectTrigger>
                 <SelectContent>
                   {CATEGORIES.map((c) => (
-                    <SelectItem key={c} value={c} className="capitalize">
-                      {c}
+                    <SelectItem key={c} value={c}>
+                      {CATEGORY_LABELS[c] ?? c}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label>Description</Label>
+              <Label>Описание</Label>
               <Input
                 value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                placeholder="e.g. Oil change for HTA-50"
+                placeholder="напр. Замена масла HTA-50"
                 required
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Date</Label>
+              <Label>Дата</Label>
               <Input
                 type="date"
                 value={form.spent_at}
@@ -280,11 +281,11 @@ export default function Expenses() {
             )}
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                Cancel
+                Отмена
               </Button>
               <Button type="submit" disabled={saving}>
                 {saving && <Loader2 size={14} className="mr-2 animate-spin" />}
-                Add Expense
+                Добавить
               </Button>
             </DialogFooter>
           </form>
@@ -295,18 +296,18 @@ export default function Expenses() {
       <Dialog open={!!deleteTarget} onOpenChange={(v) => { if (!v) setDeleteTarget(null) }}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Delete Expense</DialogTitle>
+            <DialogTitle>Удалить расход</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-gray-600">
-            Are you sure you want to delete{' '}
-            <span className="font-medium">{deleteTarget?.description}</span>? This cannot be undone.
+            Удалить{' '}
+            <span className="font-medium">{deleteTarget?.description}</span>? Это нельзя отменить.
           </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleting}>
-              Cancel
+              Отмена
             </Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
-              {deleting ? 'Deleting...' : 'Delete'}
+              {deleting ? 'Удаление...' : 'Удалить'}
             </Button>
           </DialogFooter>
         </DialogContent>

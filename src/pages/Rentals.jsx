@@ -66,17 +66,17 @@ export default function Rentals() {
   return (
     <div>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-6">
-        <h1 className="text-2xl font-bold">Rentals</h1>
+        <h1 className="text-xl font-semibold text-gray-900">Аренды</h1>
         <Button onClick={() => navigate('/rentals/new')} className="w-full md:w-auto">
           <Plus size={16} className="mr-2" />
-          New Rental
+          Новая аренда
         </Button>
       </div>
 
       {/* Filters */}
       <div className="flex flex-col md:flex-row gap-3 mb-4">
         <Input
-          placeholder="Search courier, plate, agreement…"
+          placeholder="Поиск по курьеру, номеру, договору..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="md:w-72"
@@ -86,10 +86,10 @@ export default function Rentals() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="completed">Completed</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
+            <SelectItem value="all">Все статусы</SelectItem>
+            <SelectItem value="active">Активные</SelectItem>
+            <SelectItem value="completed">Завершённые</SelectItem>
+            <SelectItem value="cancelled">Отменённые</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -99,20 +99,20 @@ export default function Rentals() {
       )}
 
       {loading ? (
-        <p className="text-muted-foreground text-sm">Loading...</p>
+        <p className="text-muted-foreground text-sm">Загрузка...</p>
       ) : filtered.length === 0 ? (
-        <p className="text-muted-foreground text-sm">No rentals found.</p>
+        <p className="text-muted-foreground text-sm">Аренды не найдены.</p>
       ) : (
-        <div className="rounded-md border overflow-x-auto">
+        <div className="rounded-xl border border-gray-200 overflow-x-auto bg-white shadow-sm">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Agreement</TableHead>
-                <TableHead>Courier</TableHead>
-                <TableHead>Scooter</TableHead>
-                <TableHead>Tariff</TableHead>
-                <TableHead>End Date</TableHead>
-                <TableHead>Status</TableHead>
+              <TableRow className="bg-gray-50">
+                <TableHead>Договор</TableHead>
+                <TableHead>Курьер</TableHead>
+                <TableHead>Скутер</TableHead>
+                <TableHead>Тариф</TableHead>
+                <TableHead>Дата окончания</TableHead>
+                <TableHead>Статус</TableHead>
               <TableHead className="w-12" />
               </TableRow>
             </TableHeader>
@@ -126,7 +126,7 @@ export default function Rentals() {
                   <TableCell className="font-mono text-sm">{r.agreement_no}</TableCell>
                   <TableCell className="font-medium">{r.courier?.full_name}</TableCell>
                   <TableCell>{r.scooter?.plate}</TableCell>
-                  <TableCell className="capitalize">{r.tariff}</TableCell>
+                  <TableCell>{{ daily: 'Суточный', weekly: 'Еженедельный', monthly: 'Ежемесячный' }[r.tariff] ?? r.tariff}</TableCell>
                   <TableCell>{r.end_date}</TableCell>
                   <TableCell>
                     <StatusBadge status={r.status} />
@@ -145,18 +145,18 @@ export default function Rentals() {
       <Dialog open={!!deleteTarget} onOpenChange={(v) => { if (!v) setDeleteTarget(null) }}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Delete Rental</DialogTitle>
+            <DialogTitle>Удалить аренду</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-gray-600">
-            Are you sure you want to delete rental <span className="font-medium font-mono">{deleteTarget?.agreement_no}</span>? All payments will also be deleted. This cannot be undone.
+            Удалить аренду <span className="font-medium font-mono">{deleteTarget?.agreement_no}</span>? Все платежи также будут удалены. Это нельзя отменить.
           </p>
           {deleteError && (
             <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{deleteError}</p>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleting}>Cancel</Button>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleting}>Отмена</Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
-              {deleting ? 'Deleting...' : 'Delete'}
+              {deleting ? 'Удаление...' : 'Удалить'}
             </Button>
           </DialogFooter>
         </DialogContent>

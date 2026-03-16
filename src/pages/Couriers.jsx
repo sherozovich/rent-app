@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Plus, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Pencil, Trash2, Loader2 } from 'lucide-react'
 import { useCouriers } from '@/hooks/useCouriers'
 import { formatUzPhone } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -162,11 +162,14 @@ export default function Couriers() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Couriers</h1>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-6">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900">Курьеры</h1>
+          <p className="text-sm text-gray-500 mt-1">Управление курьерами</p>
+        </div>
         <Button onClick={openAdd} className="w-full md:w-auto">
           <Plus size={16} className="mr-2" />
-          Add Courier
+          Добавить курьера
         </Button>
       </div>
 
@@ -175,18 +178,20 @@ export default function Couriers() {
       )}
 
       {loading ? (
-        <p className="text-muted-foreground text-sm">Loading...</p>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 size={14} className="animate-spin" /> Загрузка...
+        </div>
       ) : couriers.length === 0 ? (
-        <p className="text-muted-foreground text-sm">No couriers yet. Add the first one.</p>
+        <p className="text-muted-foreground text-sm">Курьеры не добавлены. Добавьте первого.</p>
       ) : (
-        <div className="rounded-md border overflow-x-auto">
+        <div className="rounded-xl border border-gray-200 overflow-x-auto bg-white shadow-sm">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead>Passport No</TableHead>
-                <TableHead>Active Rentals</TableHead>
+              <TableRow className="bg-gray-50">
+                <TableHead>ФИО</TableHead>
+                <TableHead>Телефон</TableHead>
+                <TableHead>Паспорт</TableHead>
+                <TableHead>Аренд</TableHead>
                 <TableHead className="w-24" />
               </TableRow>
             </TableHeader>
@@ -217,24 +222,24 @@ export default function Couriers() {
       <Dialog open={!!deleteTarget} onOpenChange={(v) => { if (!v) setDeleteTarget(null) }}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Delete Courier</DialogTitle>
+            <DialogTitle>Удалить курьера</DialogTitle>
           </DialogHeader>
           {deleteTarget?.active_rentals > 0 ? (
             <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">
-              Cannot delete <span className="font-medium">{deleteTarget?.full_name}</span> — they have {deleteTarget?.active_rentals} active rental(s). Complete or cancel all rentals first.
+              Нельзя удалить <span className="font-medium">{deleteTarget?.full_name}</span> — есть {deleteTarget?.active_rentals} активных аренд. Сначала завершите или отмените их.
             </p>
           ) : (
             <p className="text-sm text-gray-600">
-              Are you sure you want to delete <span className="font-medium">{deleteTarget?.full_name}</span>? This cannot be undone.
+              Удалить <span className="font-medium">{deleteTarget?.full_name}</span>? Это нельзя отменить.
             </p>
           )}
           {deleteError && (
             <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{deleteError}</p>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleting}>Cancel</Button>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleting}>Отмена</Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deleting || deleteTarget?.active_rentals > 0}>
-              {deleting ? 'Deleting...' : 'Delete'}
+              {deleting ? 'Удаление...' : 'Удалить'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -243,33 +248,33 @@ export default function Couriers() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{editTarget ? 'Edit Courier' : 'Add Courier'}</DialogTitle>
+            <DialogTitle>{editTarget ? 'Редактировать курьера' : 'Добавить курьера'}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="full_name">Full Name</Label>
+              <Label htmlFor="full_name">ФИО</Label>
               <Input
                 id="full_name"
                 name="full_name"
                 value={form.full_name}
                 onChange={handleChange}
-                placeholder="e.g. Ivan Petrov"
+                placeholder="напр. Иванов Иван"
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="passport_no">Passport No</Label>
+              <Label htmlFor="passport_no">Номер паспорта</Label>
               <Input
                 id="passport_no"
                 name="passport_no"
                 value={form.passport_no}
                 onChange={handleChange}
-                placeholder="e.g. AB1234567"
+                placeholder="напр. AB1234567"
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone</Label>
+              <Label htmlFor="phone">Телефон</Label>
               <Input
                 id="phone"
                 name="phone"
@@ -280,17 +285,17 @@ export default function Couriers() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="license_no">Driver's License No</Label>
+              <Label htmlFor="license_no">Номер прав</Label>
               <Input
                 id="license_no"
                 name="license_no"
                 value={form.license_no}
                 onChange={handleChange}
-                placeholder="e.g. AA123456"
+                placeholder="напр. AA123456"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="license_issue_date">License Issue Date</Label>
+              <Label htmlFor="license_issue_date">Дата выдачи прав</Label>
               <Input
                 id="license_issue_date"
                 name="license_issue_date"
@@ -300,21 +305,21 @@ export default function Couriers() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Birth Country</Label>
+              <Label>Страна рождения</Label>
               <SearchCombobox
                 value={form.birth_country}
                 onChange={(v) => setForm((p) => ({ ...p, birth_country: v, birth_city: '' }))}
                 options={countries}
-                placeholder="Search country..."
+                placeholder="Поиск страны..."
               />
             </div>
             <div className="space-y-2">
-              <Label>Birth City</Label>
+              <Label>Город рождения</Label>
               <SearchCombobox
                 value={form.birth_city}
                 onChange={(v) => setForm((p) => ({ ...p, birth_city: v }))}
                 options={cities}
-                placeholder="Search city..."
+                placeholder="Поиск города..."
                 disabled={!form.birth_country}
               />
             </div>
@@ -323,10 +328,10 @@ export default function Couriers() {
             )}
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                Cancel
+                Отмена
               </Button>
               <Button type="submit" disabled={saving}>
-                {saving ? 'Saving...' : editTarget ? 'Save Changes' : 'Add Courier'}
+                {saving ? 'Сохранение...' : editTarget ? 'Сохранить' : 'Добавить'}
               </Button>
             </DialogFooter>
           </form>

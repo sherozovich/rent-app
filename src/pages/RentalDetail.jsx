@@ -102,7 +102,7 @@ export default function RentalDetail() {
     })
   }
 
-  if (loading) return <p className="p-6 text-muted-foreground text-sm">Loading...</p>
+  if (loading) return <p className="p-6 text-muted-foreground text-sm">Загрузка...</p>
   if (error) return <p className="p-6 text-destructive text-sm">{error}</p>
   if (!rental) return null
 
@@ -129,7 +129,7 @@ export default function RentalDetail() {
             <StatusBadge status={rental.status} />
             {isExpiringSoon && (
               <span className="text-xs text-orange-600 font-medium">
-                Expires in {daysLeft} day{daysLeft !== 1 ? 's' : ''}
+                Истекает через {daysLeft} дн.
               </span>
             )}
           </div>
@@ -138,7 +138,7 @@ export default function RentalDetail() {
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={handleRenew}>
               <RefreshCw size={14} className="mr-1" />
-              Renew
+              Продлить
             </Button>
             <Button
               variant="outline"
@@ -147,7 +147,7 @@ export default function RentalDetail() {
               onClick={() => setConfirmComplete(true)}
             >
               <CheckCircle size={14} className="mr-1" />
-              Complete
+              Завершить
             </Button>
           </div>
         )}
@@ -155,31 +155,31 @@ export default function RentalDetail() {
 
       {/* Rental info */}
       <div className="rounded-lg border bg-card p-5 mb-4">
-        <p className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">Courier</p>
-        <InfoRow label="Name" value={rental.courier?.full_name} />
-        <InfoRow label="Phone" value={rental.courier?.phone} />
-        <InfoRow label="Passport" value={rental.courier?.passport_no} />
-        <InfoRow label="License No" value={rental.license_no} />
-        <InfoRow label="License Issued" value={rental.license_issue_date} />
+        <p className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">Курьер</p>
+        <InfoRow label="ФИО" value={rental.courier?.full_name} />
+        <InfoRow label="Телефон" value={rental.courier?.phone} />
+        <InfoRow label="Паспорт" value={rental.courier?.passport_no} />
+        <InfoRow label="Номер прав" value={rental.license_no} />
+        <InfoRow label="Дата выдачи прав" value={rental.license_issue_date} />
       </div>
 
       <div className="rounded-lg border bg-card p-5 mb-4">
-        <p className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">Scooter</p>
-        <InfoRow label="Model" value={rental.scooter?.model} />
-        <InfoRow label="Plate" value={rental.scooter?.plate} />
+        <p className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">Скутер</p>
+        <InfoRow label="Модель" value={rental.scooter?.model} />
+        <InfoRow label="Номер" value={rental.scooter?.plate} />
         <InfoRow label="VIN" value={rental.scooter?.vin} />
       </div>
 
       <div className="rounded-lg border bg-card p-5 mb-4">
-        <p className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">Rental Period</p>
-        <InfoRow label="Tariff" value={rental.tariff} />
-        <InfoRow label="Start Date" value={rental.start_date} />
-        <InfoRow label="End Date" value={rental.end_date} />
+        <p className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">Период аренды</p>
+        <InfoRow label="Тариф" value={{ daily: 'Суточный', weekly: 'Еженедельный', monthly: 'Ежемесячный' }[rental.tariff] ?? rental.tariff} />
+        <InfoRow label="Дата начала" value={rental.start_date} />
+        <InfoRow label="Дата окончания" value={rental.end_date} />
       </div>
 
       {/* Photos */}
       <div className="rounded-lg border bg-card p-5 mb-4">
-        <p className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">Photos</p>
+        <p className="text-sm font-semibold text-muted-foreground mb-3 uppercase tracking-wide">Фотографии</p>
         <PhotoUpload
           rentalId={rental.id}
           photos={rental.photos || []}
@@ -193,11 +193,11 @@ export default function RentalDetail() {
       <div className="flex flex-col sm:flex-row gap-2 mb-4">
         <Button variant="outline" className="w-full sm:w-auto" onClick={handlePrintAgreement}>
           <FileText size={14} className="mr-2" />
-          Print Rental Agreement
+          Печать договора
         </Button>
         <Button variant="outline" className="w-full sm:w-auto" onClick={handlePrintDoverenost}>
           <FileCheck size={14} className="mr-2" />
-          Print Doverenost
+          Печать доверенности
         </Button>
       </div>
 
@@ -205,45 +205,45 @@ export default function RentalDetail() {
       <div className="rounded-lg border bg-card p-5 mb-4">
         <div className="flex items-center justify-between mb-3">
           <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-            Payments
+            Платежи
           </p>
           <div className="flex items-center gap-3 flex-wrap">
             <span className="text-sm font-medium">
-              Charged:{' '}
+              К оплате:{' '}
               <span className="font-mono">{totalCharged.toLocaleString()}</span>
             </span>
             <span className="text-sm font-medium">
-              Paid:{' '}
+              Оплачено:{' '}
               <span className="text-green-700 font-mono">{totalPaid.toLocaleString()}</span>
             </span>
             {balance > 0 && (
               <span className="text-sm font-medium text-red-600">
-                Balance: <span className="font-mono">{balance.toLocaleString()}</span>
+                Остаток: <span className="font-mono">{balance.toLocaleString()}</span>
               </span>
             )}
             {balance <= 0 && totalCharged > 0 && (
-              <span className="text-sm text-green-700 font-medium">Paid in full</span>
+              <span className="text-sm text-green-700 font-medium">Оплачено полностью</span>
             )}
             {rental.status === 'active' && (
               <Button size="sm" onClick={() => setPayOpen(true)}>
                 <Plus size={14} className="mr-1" />
-                Add
+                Добавить
               </Button>
             )}
           </div>
         </div>
 
         {payments.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No payments recorded.</p>
+          <p className="text-sm text-muted-foreground">Платежи не записаны.</p>
         ) : (
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Method</TableHead>
-                  <TableHead>Note</TableHead>
+                  <TableHead>Дата</TableHead>
+                  <TableHead>Сумма</TableHead>
+                  <TableHead>Способ</TableHead>
+                  <TableHead>Примечание</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -251,7 +251,7 @@ export default function RentalDetail() {
                   <TableRow key={p.id}>
                     <TableCell>{p.paid_at}</TableCell>
                     <TableCell className="font-medium">{Number(p.amount).toLocaleString()}</TableCell>
-                    <TableCell className="capitalize">{p.method}</TableCell>
+                    <TableCell>{{ cash: 'Наличные', transfer: 'Перевод' }[p.method] ?? p.method}</TableCell>
                     <TableCell className="text-muted-foreground">{p.note || '—'}</TableCell>
                   </TableRow>
                 ))}
@@ -265,11 +265,11 @@ export default function RentalDetail() {
       <Dialog open={payOpen} onOpenChange={setPayOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Payment</DialogTitle>
+            <DialogTitle>Добавить платёж</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleAddPayment} className="space-y-4">
             <div className="space-y-2">
-              <Label>Amount</Label>
+              <Label>Сумма</Label>
               <Input
                 inputMode="numeric"
                 value={formatAmount(payForm.amount)}
@@ -279,7 +279,7 @@ export default function RentalDetail() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Method</Label>
+              <Label>Способ оплаты</Label>
               <Select
                 value={payForm.method}
                 onValueChange={(v) => setPayForm((p) => ({ ...p, method: v }))}
@@ -288,13 +288,13 @@ export default function RentalDetail() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="cash">Cash</SelectItem>
-                  <SelectItem value="transfer">Transfer</SelectItem>
+                  <SelectItem value="cash">Наличные</SelectItem>
+                  <SelectItem value="transfer">Перевод</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Date</Label>
+              <Label>Дата</Label>
               <Input
                 type="date"
                 value={payForm.paid_at}
@@ -303,20 +303,20 @@ export default function RentalDetail() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Note (optional)</Label>
+              <Label>Примечание (необязательно)</Label>
               <Input
                 value={payForm.note}
                 onChange={(e) => setPayForm((p) => ({ ...p, note: e.target.value }))}
-                placeholder="e.g. Weekly payment"
+                placeholder="напр. Еженедельный платёж"
               />
             </div>
             {formError && <p className="text-sm text-destructive">{formError}</p>}
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setPayOpen(false)}>
-                Cancel
+                Отмена
               </Button>
               <Button type="submit" disabled={saving}>
-                {saving ? 'Saving...' : 'Add Payment'}
+                {saving ? 'Сохранение...' : 'Добавить'}
               </Button>
             </DialogFooter>
           </form>
@@ -327,17 +327,17 @@ export default function RentalDetail() {
       <Dialog open={confirmComplete} onOpenChange={setConfirmComplete}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Complete Rental?</DialogTitle>
+            <DialogTitle>Завершить аренду?</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            This will mark the rental as completed and set the scooter back to available.
+            Аренда будет помечена как завершённая, скутер станет доступен.
           </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmComplete(false)}>
-              Cancel
+              Отмена
             </Button>
             <Button onClick={handleComplete} disabled={saving}>
-              {saving ? 'Saving...' : 'Complete'}
+              {saving ? 'Сохранение...' : 'Завершить'}
             </Button>
           </DialogFooter>
         </DialogContent>
