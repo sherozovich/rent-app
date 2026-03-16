@@ -12,11 +12,13 @@ Single admin use. No multi-user auth required for v1.
 
 - **Frontend:** React + Vite
 - **Styling:** Tailwind CSS + shadcn/ui
+- **Charts:** recharts (via shadcn ChartContainer)
 - **Backend:** Supabase (PostgreSQL + Storage + Edge Functions)
 - **PDF Generation:** pdfmake (browser-side, no server needed)
 - **Notifications:** Telegram Bot API
 - **Hosting:** Netlify
 - **Language:** JavaScript (no TypeScript)
+- **UI Language:** Russian (все надписи на русском языке)
 
 -----
 
@@ -50,19 +52,30 @@ dokon/
     │   └── Expenses.jsx         # Phase 10: expense tracking
     │
     ├── components/
-    │   ├── Layout.jsx           # sidebar (desktop) + hamburger nav (mobile)
+    │   ├── Layout.jsx           # shadcn Sidebar + SidebarInset + Breadcrumb header
     │   ├── AuthGuard.jsx        # Phase 8: route protection
-    │   ├── StatusBadge.jsx
+    │   ├── StatusBadge.jsx      # Russian status labels
     │   ├── PhotoUpload.jsx      # upload to Supabase Storage, delete photos
     │   └── ui/                  # shadcn/ui components
+    │       ├── avatar.jsx
     │       ├── badge.jsx
+    │       ├── breadcrumb.jsx
     │       ├── button.jsx
     │       ├── card.jsx
+    │       ├── chart.jsx        # ChartContainer, ChartTooltip, ChartTooltipContent
     │       ├── dialog.jsx
+    │       ├── dropdown-menu.jsx
     │       ├── input.jsx
     │       ├── label.jsx
+    │       ├── pagination.jsx
+    │       ├── progress.jsx
     │       ├── select.jsx
-    │       └── table.jsx
+    │       ├── separator.jsx
+    │       ├── sheet.jsx
+    │       ├── sidebar.jsx      # full shadcn sidebar kit
+    │       ├── skeleton.jsx
+    │       ├── table.jsx
+    │       └── tooltip.jsx
     │
     ├── lib/
     │   ├── supabase.js          # supabase client init
@@ -76,7 +89,8 @@ dokon/
     └── hooks/
         ├── useRentals.js        # useRentals(filters) + useRental(id)
         ├── useCouriers.js
-        └── useScooters.js
+        ├── useScooters.js
+        └── use-mobile.jsx       # useIsMobile() — required by shadcn sidebar
 ```
 
 -----
@@ -105,7 +119,6 @@ passport_no        text NOT NULL
 phone              text NOT NULL
 license_no         text
 license_issue_date date
-nationality        text
 birth_country      text
 birth_city         text
 created_at         timestamp DEFAULT now()
@@ -286,18 +299,20 @@ All monetary values must be displayed in UZS (Uzbek Som).
 
 ### Dashboard (`/`)
 
-- 4 stat cards: Total / Rented / Available / Maintenance scooters + Monthly revenue
-- Stat cards: This month expenses + Net income (revenue - expenses)
-- Table: rentals ending in ≤ 2 days (expiring soon)
-- Table: rentals with balance > 0 (overdue payments)
-- Table: all active rentals
-- Each expiring rental has a **Send Telegram Reminder** button
+- 7 stat cards: Всего скутеров, Арендовано, Доступно, Обслуживание, Выручка за месяц, Расходы за месяц, Чистый доход
+- BarChart: Выручка за 14 дней (recharts via shadcn ChartContainer, data from `payments` grouped by `paid_at`)
+- PieChart: Расходы по категориям (current month `expenses` grouped by category)
+- Table: Истекают скоро (rentals ending in ≤ 2 days) + Send Telegram Reminder button
+- Table: Задолженности (rentals with balance > 0)
+- Table: Активные аренды
 
 ### Couriers (`/couriers`)
 
-- List with: name, phone, active rental count
-- Add / Edit courier: full_name, passport_no, phone, license_no, license_issue_date, nationality, birth_country, birth_city
-- Country list from `restcountries.com/v3.1/all?fields=name`; cities from `countriesnow.space/api/v0.1/countries/cities` (POST)
+- List with: ФИО, Телефон, active rental count
+- Add / Edit courier: full_name, passport_no, phone, license_no, license_issue_date, birth_country, birth_city
+- birth_country: searchable combobox, options from `restcountries.com/v3.1/all?fields=name`
+- birth_city: searchable combobox (disabled until country chosen), options from `countriesnow.space/api/v0.1/countries/cities` (POST)
+- `nationality` field removed — not needed
 
 ### Scooters (`/scooters`)
 
@@ -327,11 +342,11 @@ All monetary values must be displayed in UZS (Uzbek Som).
 
 ### Login (`/login`) — Phase 8
 
-- Username + Password fields + Login button
+- Логин + Пароль fields + Войти button
 - Default credentials: `username = jahongir`, `password = jahongir97`
 - On submit: query `settings` table, compare credentials
 - On success: save `dokon_authed = true` to localStorage → redirect to `/`
-- On fail: show error "Username or password incorrect"
+- On fail: show error "Неверный логин или пароль"
 
 ### Settings (`/settings`) — Phase 9
 
@@ -401,7 +416,7 @@ Trigger: Manual button on dashboard per expiring rental (no cron in v1).
 
 App must work on mobile browsers (phone screen).
 
-- Sidebar: `hidden md:flex` — on mobile show top navbar + hamburger menu
+- Sidebar: shadcn `SidebarProvider` + `Sidebar` + `SidebarInset` — mobile sheet via `Sheet` component (built into sidebar kit)
 - All table wrappers: `overflow-x-auto`
 - Side-by-side layouts: `flex-col md:flex-row`
 - Buttons: `w-full md:w-auto`
@@ -452,8 +467,68 @@ chore(db): add scooter status trigger
 |8    |Authentication (single-admin, localStorage session)    |Done      |
 |9    |Settings page (pricing + password change)              |Done      |
 |10   |Expenses page + dashboard integration                  |Done      |
+|11   |Production-ready overhaul: shadcn sidebar, recharts dashboard, full Russian UI, UX polish|Done|
 
 Always complete the current phase fully before starting the next.
+
+-----
+
+## UI Patterns
+
+### Layout
+- `Layout.jsx` uses shadcn `SidebarProvider` + `AppSidebar` + `SidebarInset`
+- Nav groups defined in `navGroups` array (Основное / Финансы / Система)
+- Active route highlighting via `NavLink` + `SidebarMenuButton isActive` prop
+- Breadcrumb in sticky header auto-derives page label from `routeLabels` map
+- Logout button top-right in header
+
+### Page headers
+All pages use consistent header style:
+```jsx
+<div>
+  <h1 className="text-xl font-semibold text-gray-900">Название</h1>
+  <p className="text-sm text-gray-500 mt-1">Подзаголовок</p>
+</div>
+```
+
+### Table wrappers
+All data tables wrapped in:
+```jsx
+<div className="rounded-xl border border-gray-200 overflow-x-auto bg-white shadow-sm">
+  <Table>
+    <TableHeader><TableRow className="bg-gray-50">...</TableRow></TableHeader>
+    ...
+  </Table>
+</div>
+```
+
+### Dashboard charts
+- Bar chart (revenue): `ChartContainer` + recharts `BarChart` + `Bar`
+- Pie chart (expenses): `ChartContainer` + recharts `PieChart` + `Pie` + `Cell`
+- Chart configs use Russian labels: `{ amount: { label: 'Выручка', color: 'var(--primary)' } }`
+
+### Tariff labels (Russian)
+Always use this map when displaying tariffs:
+```js
+{ daily: 'Суточный', weekly: 'Еженедельный', monthly: 'Ежемесячный' }
+```
+
+### Payment method labels (Russian)
+```js
+{ cash: 'Наличные', transfer: 'Перевод' }
+```
+
+### Expense category labels (Russian)
+```js
+{ maintenance: 'Обслуживание', fuel: 'Топливо', repair: 'Ремонт', other: 'Прочее' }
+```
+
+### SearchCombobox
+Custom component used for birth_country and birth_city in Couriers and NewRental.
+- Defined inline at top of each file (not a shared component)
+- Uses `useRef` for click-outside detection
+- Shows filtered dropdown max 80 results
+- `onMouseDown e.preventDefault()` prevents blur-before-click
 
 -----
 
