@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { ChevronLeft, ChevronRight, Check } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Check, Loader2 } from 'lucide-react'
+import imageCompression from 'browser-image-compression'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { supabase } from '@/lib/supabase'
 import { generateAgreementNumber } from '@/lib/agreementNumber'
@@ -116,8 +117,10 @@ const emptyQuickForm = {
   full_name: '', passport_no: '', phone: '',
   license_no: '', license_issue_date: '',
   birth_country: '', birth_city: '',
-  address: '',
+  address: '', avatar_url: '',
 }
+
+const AVATAR_COMPRESSION = { maxSizeMB: 0.3, maxWidthOrHeight: 400, useWebWorker: true }
 
 // ─── Step 1: Select or quick-add courier ─────────────────────────────────────
 function Step1({ data, setData }) {
@@ -128,6 +131,8 @@ function Step1({ data, setData }) {
   const [formError, setFormError] = useState(null)
   const [countries, setCountries] = useState([])
   const [cities, setCities] = useState([])
+  const avatarInputRef = useRef(null)
+  const [avatarUploading, setAvatarUploading] = useState(false)
 
   useEffect(() => {
     fetch('https://restcountries.com/v3.1/all?fields=name')
@@ -147,6 +152,27 @@ function Step1({ data, setData }) {
       .then(d => setCities(d.data || []))
       .catch(() => setCities([]))
   }, [form.birth_country])
+
+  async function handleAvatarUpload(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setAvatarUploading(true)
+    try {
+      const compressed = await imageCompression(file, AVATAR_COMPRESSION)
+      const path = `new-${Date.now()}.jpg`
+      const { error: uploadError } = await supabase.storage
+        .from('courier-photos')
+        .upload(path, compressed, { upsert: true })
+      if (uploadError) throw new Error(uploadError.message)
+      const { data: urlData } = supabase.storage.from('courier-photos').getPublicUrl(path)
+      setForm((p) => ({ ...p, avatar_url: urlData.publicUrl }))
+    } catch (err) {
+      setFormError(err.message)
+    } finally {
+      setAvatarUploading(false)
+      if (avatarInputRef.current) avatarInputRef.current.value = ''
+    }
+  }
 
   async function handleQuickAdd(e) {
     e.preventDefault()
@@ -204,11 +230,49 @@ function Step1({ data, setData }) {
       </Button>
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Добавить курьера</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleQuickAdd} className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>Фото</Label>
+              <div className="flex items-center gap-3">
+                <Avatar className="w-12 h-12">
+                  <AvatarImage src={form.avatar_url || undefined} alt="avatar" />
+                  <AvatarFallback className="text-base">{form.full_name?.[0] ?? '?'}</AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col gap-1">
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleAvatarUpload}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={avatarUploading}
+                    onClick={() => avatarInputRef.current?.click()}
+                  >
+                    {avatarUploading ? <><Loader2 size={13} className="mr-1 animate-spin" />Загрузка...</> : 'Выбрать фото'}
+                  </Button>
+                  {form.avatar_url && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-500 hover:text-red-700 h-7 text-xs"
+                      onClick={() => setForm((p) => ({ ...p, avatar_url: '' }))}
+                    >
+                      Удалить фото
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
             <div className="space-y-1.5">
               <Label>ФИО</Label>
               <Input
