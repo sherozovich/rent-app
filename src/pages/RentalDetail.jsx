@@ -107,7 +107,7 @@ export default function RentalDetail() {
   if (!rental) return null
 
   const totalCharged = rental
-    ? (rental.agreed_price ?? calcTotalCharged(rental.tariff, rental.start_date, rental.end_date))
+    ? (rental.agreed_price != null ? Number(rental.agreed_price) : calcTotalCharged(rental.tariff, rental.start_date, rental.end_date))
     : 0
   const balance = totalCharged - totalPaid
 
