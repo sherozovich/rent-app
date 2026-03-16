@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Pencil } from 'lucide-react'
+import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { useCouriers } from '@/hooks/useCouriers'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -23,12 +23,15 @@ import {
 const emptyForm = { full_name: '', passport_no: '', phone: '' }
 
 export default function Couriers() {
-  const { couriers, loading, error, addCourier, updateCourier } = useCouriers()
+  const { couriers, loading, error, addCourier, updateCourier, deleteCourier } = useCouriers()
   const [open, setOpen] = useState(false)
   const [editTarget, setEditTarget] = useState(null)
   const [form, setForm] = useState(emptyForm)
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState(null)
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState(null)
 
   function openAdd() {
     setEditTarget(null)
@@ -50,6 +53,19 @@ export default function Couriers() {
 
   function handleChange(e) {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+  }
+
+  async function handleDelete() {
+    setDeleting(true)
+    setDeleteError(null)
+    try {
+      await deleteCourier(deleteTarget.id)
+      setDeleteTarget(null)
+    } catch (err) {
+      setDeleteError(err.message)
+    } finally {
+      setDeleting(false)
+    }
   }
 
   async function handleSubmit(e) {
@@ -97,7 +113,7 @@ export default function Couriers() {
                 <TableHead>Phone</TableHead>
                 <TableHead>Passport No</TableHead>
                 <TableHead>Active Rentals</TableHead>
-                <TableHead className="w-16" />
+                <TableHead className="w-24" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -108,9 +124,14 @@ export default function Couriers() {
                   <TableCell className="text-muted-foreground">{courier.passport_no}</TableCell>
                   <TableCell>{courier.active_rentals}</TableCell>
                   <TableCell>
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(courier)}>
-                      <Pencil size={15} />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => openEdit(courier)}>
+                        <Pencil size={15} />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => { setDeleteTarget(courier); setDeleteError(null) }}>
+                        <Trash2 size={15} />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -118,6 +139,26 @@ export default function Couriers() {
           </Table>
         </div>
       )}
+
+      <Dialog open={!!deleteTarget} onOpenChange={(v) => { if (!v) setDeleteTarget(null) }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete Courier</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-gray-600">
+            Are you sure you want to delete <span className="font-medium">{deleteTarget?.full_name}</span>? This cannot be undone.
+          </p>
+          {deleteError && (
+            <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{deleteError}</p>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleting}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+              {deleting ? 'Deleting...' : 'Delete'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md">

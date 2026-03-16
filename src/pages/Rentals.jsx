@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus } from 'lucide-react'
+import { Plus, Trash2 } from 'lucide-react'
 import { useRentals } from '@/hooks/useRentals'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,6 +11,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import {
   Table,
   TableBody,
@@ -26,9 +33,25 @@ export default function Rentals() {
   const [statusFilter, setStatusFilter] = useState('all')
   const [search, setSearch] = useState('')
 
-  const { rentals, loading, error } = useRentals(
+  const { rentals, loading, error, deleteRental } = useRentals(
     statusFilter !== 'all' ? { status: statusFilter } : {},
   )
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState(null)
+
+  async function handleDelete() {
+    setDeleting(true)
+    setDeleteError(null)
+    try {
+      await deleteRental(deleteTarget.id)
+      setDeleteTarget(null)
+    } catch (err) {
+      setDeleteError(err.message)
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   const filtered = rentals.filter((r) => {
     if (!search) return true
@@ -90,6 +113,7 @@ export default function Rentals() {
                 <TableHead>Tariff</TableHead>
                 <TableHead>End Date</TableHead>
                 <TableHead>Status</TableHead>
+              <TableHead className="w-12" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -107,12 +131,36 @@ export default function Rentals() {
                   <TableCell>
                     <StatusBadge status={r.status} />
                   </TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-700 hover:bg-red-50" onClick={() => { setDeleteTarget(r); setDeleteError(null) }}>
+                      <Trash2 size={15} />
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </div>
       )}
+      <Dialog open={!!deleteTarget} onOpenChange={(v) => { if (!v) setDeleteTarget(null) }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete Rental</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-gray-600">
+            Are you sure you want to delete rental <span className="font-medium font-mono">{deleteTarget?.agreement_no}</span>? All payments will also be deleted. This cannot be undone.
+          </p>
+          {deleteError && (
+            <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{deleteError}</p>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleting}>Cancel</Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+              {deleting ? 'Deleting...' : 'Delete'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

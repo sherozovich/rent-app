@@ -39,5 +39,11 @@ export function useScooters() {
     await fetchScooters()
   }
 
-  return { scooters, loading, error, addScooter, updateScooter, refetch: fetchScooters }
+  async function deleteScooter(id) {
+    const { error } = await supabase.from('scooters').delete().eq('id', id)
+    if (error) throw new Error(error.message)
+    await fetchScooters()
+  }
+
+  return { scooters, loading, error, addScooter, updateScooter, deleteScooter, refetch: fetchScooters }
 }

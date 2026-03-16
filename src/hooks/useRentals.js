@@ -37,7 +37,17 @@ export function useRentals(filters = {}) {
     fetchRentals()
   }, [fetchRentals])
 
-  return { rentals, loading, error, refetch: fetchRentals }
+  async function deleteRental(id) {
+    // Update to cancelled first so the trigger sets scooter back to available
+    await supabase.from('rentals').update({ status: 'cancelled' }).eq('id', id)
+    // Delete related payments
+    await supabase.from('payments').delete().eq('rental_id', id)
+    const { error } = await supabase.from('rentals').delete().eq('id', id)
+    if (error) throw new Error(error.message)
+    await fetchRentals()
+  }
+
+  return { rentals, loading, error, deleteRental, refetch: fetchRentals }
 }
 
 export function useRental(id) {

@@ -49,5 +49,11 @@ export function useCouriers() {
     await fetchCouriers()
   }
 
-  return { couriers, loading, error, addCourier, updateCourier, refetch: fetchCouriers }
+  async function deleteCourier(id) {
+    const { error } = await supabase.from('couriers').delete().eq('id', id)
+    if (error) throw new Error(error.message)
+    await fetchCouriers()
+  }
+
+  return { couriers, loading, error, addCourier, updateCourier, deleteCourier, refetch: fetchCouriers }
 }
