@@ -71,7 +71,7 @@ dokon/
     │   ├── printPdf.js          # printPdf(docDefinition) — opens PDF in new tab
     │   ├── agreementNumber.js   # generateAgreementNumber() — DOK-YYYY-NNNN
     │   ├── tariffRates.js       # TARIFF_RATES + calcTotalCharged()
-    │   └── utils.js             # cn() helper (clsx + tailwind-merge)
+    │   └── utils.js             # cn(), formatUzPhone(), formatAmount()
     │
     └── hooks/
         ├── useRentals.js        # useRentals(filters) + useRental(id)
@@ -201,6 +201,44 @@ CREATE TRIGGER rental_status_trigger
 AFTER INSERT OR UPDATE ON rentals
 FOR EACH ROW EXECUTE FUNCTION update_scooter_status();
 ```
+
+-----
+
+## Input Formatting Conventions
+
+### Phone numbers
+All phone inputs use Uzbek format mask: `+998 XX XXX XX XX`
+
+Use `formatUzPhone(val)` from `@/lib/utils` — strips non-digits, then formats:
+```js
+onChange={(e) => setForm((p) => ({ ...p, phone: formatUzPhone(e.target.value) }))}
+```
+Apply in: Couriers form, NewRental quick-add courier form.
+
+### Money amounts
+All monetary inputs display values with space thousands separator: `1 500 000`
+
+Use `formatAmount(raw)` from `@/lib/utils` — raw digits string → formatted display:
+```js
+value={formatAmount(form.amount)}
+onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value.replace(/\D/g, '') }))}
+```
+- State stores **raw digit string** (no spaces)
+- `value` prop uses `formatAmount` for display only
+- On submit: `Number(form.amount)` converts cleanly
+- Use `inputMode="numeric"` (not `type="number"`) so formatting isn't blocked
+Apply in: Expenses amount, Settings rates, RentalDetail payment amount.
+
+### Auto-uppercase fields
+Passport No, License No, Plate, VIN — auto-uppercase as user types:
+```js
+const upper = ['passport_no', 'license_no', 'plate', 'vin'].includes(name)
+setForm((prev) => ({ ...prev, [name]: upper ? value.toUpperCase() : value }))
+```
+
+### Search / list inputs
+Courier and scooter search in New Rental wizard show **no results by default**.
+List only appears after the user starts typing. Show "Type to search..." prompt when empty.
 
 -----
 
