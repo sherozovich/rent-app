@@ -444,8 +444,6 @@ function Step4({ data }) {
         <Row label="Начало" value={data.start_date} />
         <Row label="Окончание" value={endDate} />
         <Row label="Стоимость" value={data.agreed_price ? `${Number(data.agreed_price).toLocaleString()} UZS` : '—'} />
-        <Row label="Номер прав" value={data.license_no} />
-        <Row label="Дата выдачи прав" value={data.license_issue_date} />
       </div>
     </div>
   )
