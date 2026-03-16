@@ -15,6 +15,7 @@ Single admin use. No multi-user auth required for v1.
 - **Charts:** recharts (via shadcn ChartContainer)
 - **Backend:** Supabase (PostgreSQL + Storage + Edge Functions)
 - **PDF Generation:** pdfmake (browser-side, no server needed)
+- **Image Compression:** browser-image-compression (client-side, before Supabase Storage upload)
 - **Notifications:** Telegram Bot API
 - **Hosting:** Vercel (https://dknrent.vercel.app)
 - **Language:** JavaScript (no TypeScript)
@@ -55,7 +56,7 @@ dokon/
     │   ├── Layout.jsx           # shadcn Sidebar + SidebarInset + Breadcrumb header
     │   ├── AuthGuard.jsx        # Phase 8: route protection
     │   ├── StatusBadge.jsx      # Russian status labels
-    │   ├── PhotoUpload.jsx      # upload to Supabase Storage, delete photos
+    │   ├── PhotoUpload.jsx      # upload to Supabase Storage with compression, delete photos
     │   └── ui/                  # shadcn/ui components
     │       ├── avatar.jsx
     │       ├── badge.jsx
@@ -122,6 +123,7 @@ license_issue_date date
 birth_country      text
 birth_city         text
 address            text
+avatar_url         text                    -- public URL from courier-photos Storage bucket
 created_at         timestamp DEFAULT now()
 ```
 
@@ -195,6 +197,26 @@ category     text NOT NULL   -- maintenance | fuel | repair | other
 description  text NOT NULL
 spent_at     date NOT NULL
 created_at   timestamp DEFAULT now()
+```
+
+### Supabase Storage Buckets
+
+| Bucket | Access | Used for |
+|--------|--------|----------|
+| `courier-photos` | public | Courier avatar photos (compressed to ≤0.3 MB, max 400px) |
+| `rental-photos`  | public | Rental inspection/handover photos (compressed to ≤0.5 MB, max 1280px) |
+
+RLS policies (run once in SQL editor):
+```sql
+CREATE POLICY "courier-photos: allow all" ON storage.objects
+  FOR ALL TO public
+  USING (bucket_id = 'courier-photos')
+  WITH CHECK (bucket_id = 'courier-photos');
+
+CREATE POLICY "rental-photos: allow all" ON storage.objects
+  FOR ALL TO public
+  USING (bucket_id = 'rental-photos')
+  WITH CHECK (bucket_id = 'rental-photos');
 ```
 
 ### Supabase Trigger (run once in SQL editor)
@@ -318,8 +340,9 @@ All monetary values must be displayed in UZS (Uzbek Som).
 
 ### Couriers (`/couriers`)
 
-- List with: ФИО, Телефон, active rental count
-- Add / Edit courier: full_name, passport_no, phone, **address**, license_no, license_issue_date, birth_country, birth_city
+- List with: **circular avatar**, ФИО, Телефон, active rental count — uses shadcn `Avatar`/`AvatarImage`/`AvatarFallback`
+- Add / Edit courier: **avatar photo upload** (at top of form), full_name, passport_no, phone, **address**, license_no, license_issue_date, birth_country, birth_city
+- Avatar upload: compressed client-side (`maxSizeMB: 0.3, maxWidthOrHeight: 400`) via `browser-image-compression`, stored in `courier-photos` bucket, public URL saved to `couriers.avatar_url`
 - birth_country: searchable combobox, options from `restcountries.com/v3.1/all?fields=name`
 - birth_city: searchable combobox (disabled until country chosen), options from `countriesnow.space/api/v0.1/countries/cities` (POST)
 - `nationality` field removed — not needed
@@ -331,7 +354,7 @@ All monetary values must be displayed in UZS (Uzbek Som).
 
 ### New Rental (`/rentals/new`) — 5-step wizard
 
-1. Select or quick-add courier — **SearchCombobox dropdown** (not list+button). Quick-add modal includes address field.
+1. Select or quick-add courier — **SearchCombobox dropdown** (not list+button). Quick-add modal includes address field. Selected courier shown as a card with **circular avatar**, name, phone.
 1. Select available scooter — **SearchCombobox dropdown**, shows `plate – model` options
 1. Fill: tariff, days (if daily, min 3), start_date. **Price input** auto-fills from tariff rate, admin can override. Shows "сбросить" link if changed.
 1. Review summary (includes Стоимость row) → confirm → create rental + save `agreed_price`
@@ -492,6 +515,7 @@ Current state: **v1.0 — production-ready.** All core features complete and dep
 |10   |Expenses page + dashboard integration                  |Done      |
 |11   |Production-ready overhaul: shadcn sidebar, recharts dashboard, full Russian UI, UX polish|Done|
 |12   |Courier address field, SearchCombobox selection in wizard, custom agreed_price per rental|Done|
+|13   |Courier avatar upload + compression, avatar in list + NewRental card, rental photo compression|Done|
 
 New features and fixes go on `feature/<description>` or `fix/<description>` branches, then PR to main.
 
@@ -554,6 +578,39 @@ Custom component used for: birth_country, birth_city (Couriers + NewRental quick
 - Shows filtered dropdown max 80 results
 - `onMouseDown e.preventDefault()` prevents blur-before-click
 - After selection, shows a summary card below (selected courier or scooter details)
+
+### Image Compression (browser-image-compression)
+All file uploads compress images client-side before sending to Supabase Storage.
+
+```js
+import imageCompression from 'browser-image-compression'
+
+// Courier avatars (Couriers.jsx)
+const AVATAR_COMPRESSION = { maxSizeMB: 0.3, maxWidthOrHeight: 400, useWebWorker: true }
+
+// Rental photos (PhotoUpload.jsx)
+const COMPRESSION_OPTIONS = { maxSizeMB: 0.5, maxWidthOrHeight: 1280, useWebWorker: true }
+```
+
+Pattern:
+```js
+const compressed = await imageCompression(file, options)
+await supabase.storage.from('bucket-name').upload(path, compressed, { upsert: true })
+const { data } = supabase.storage.from('bucket-name').getPublicUrl(path)
+```
+
+### Courier Avatar (shadcn Avatar)
+Couriers carry an `avatar_url` stored in `courier-photos` Supabase Storage bucket.
+Always render with `Avatar`/`AvatarImage`/`AvatarFallback` — fallback shows first letter of `full_name`.
+```jsx
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
+
+<Avatar className="w-8 h-8">
+  <AvatarImage src={courier.avatar_url || undefined} alt={courier.full_name} />
+  <AvatarFallback className="text-xs">{courier.full_name?.[0] ?? '?'}</AvatarFallback>
+</Avatar>
+```
+Used in: Couriers list table, Couriers add/edit form (preview), NewRental Step 1 selected-courier card.
 
 -----
 
