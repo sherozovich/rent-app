@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
 import { Plus, Pencil, Trash2, Loader2 } from 'lucide-react'
+import imageCompression from 'browser-image-compression'
 import { useCouriers } from '@/hooks/useCouriers'
+import { supabase } from '@/lib/supabase'
 import { formatUzPhone } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import {
   Dialog,
   DialogContent,
@@ -21,11 +24,13 @@ import {
   TableRow,
 } from '@/components/ui/table'
 
+const AVATAR_COMPRESSION = { maxSizeMB: 0.3, maxWidthOrHeight: 400, useWebWorker: true }
+
 const emptyForm = {
   full_name: '', passport_no: '', phone: '',
   license_no: '', license_issue_date: '',
   birth_country: '', birth_city: '',
-  address: '',
+  address: '', avatar_url: '',
 }
 
 function SearchCombobox({ value, onChange, options, placeholder, disabled }) {
@@ -82,6 +87,8 @@ export default function Couriers() {
   const [deleteError, setDeleteError] = useState(null)
   const [countries, setCountries] = useState([])
   const [cities, setCities] = useState([])
+  const avatarInputRef = useRef(null)
+  const [avatarUploading, setAvatarUploading] = useState(false)
 
   useEffect(() => {
     fetch('https://restcountries.com/v3.1/all?fields=name')
@@ -120,6 +127,7 @@ export default function Couriers() {
       birth_country: courier.birth_country ?? '',
       birth_city: courier.birth_city ?? '',
       address: courier.address ?? '',
+      avatar_url: courier.avatar_url ?? '',
     })
     setFormError(null)
     setOpen(true)
@@ -129,6 +137,28 @@ export default function Couriers() {
     const { name, value } = e.target
     const upper = ['passport_no', 'license_no'].includes(name)
     setForm((prev) => ({ ...prev, [name]: upper ? value.toUpperCase() : value }))
+  }
+
+  async function handleAvatarUpload(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setAvatarUploading(true)
+    try {
+      const compressed = await imageCompression(file, AVATAR_COMPRESSION)
+      const id = editTarget?.id ?? `new-${Date.now()}`
+      const path = `${id}-${Date.now()}.jpg`
+      const { error: uploadError } = await supabase.storage
+        .from('courier-photos')
+        .upload(path, compressed, { upsert: true })
+      if (uploadError) throw new Error(uploadError.message)
+      const { data } = supabase.storage.from('courier-photos').getPublicUrl(path)
+      setForm((p) => ({ ...p, avatar_url: data.publicUrl }))
+    } catch (err) {
+      setFormError(err.message)
+    } finally {
+      setAvatarUploading(false)
+      if (avatarInputRef.current) avatarInputRef.current.value = ''
+    }
   }
 
   async function handleDelete() {
@@ -190,6 +220,7 @@ export default function Couriers() {
           <Table>
             <TableHeader>
               <TableRow className="bg-gray-50">
+                <TableHead className="w-10" />
                 <TableHead>ФИО</TableHead>
                 <TableHead>Телефон</TableHead>
                 <TableHead>Паспорт</TableHead>
@@ -200,6 +231,12 @@ export default function Couriers() {
             <TableBody>
               {couriers.map((courier) => (
                 <TableRow key={courier.id}>
+                  <TableCell>
+                    <Avatar className="w-8 h-8">
+                      <AvatarImage src={courier.avatar_url || undefined} alt={courier.full_name} />
+                      <AvatarFallback className="text-xs">{courier.full_name?.[0] ?? '?'}</AvatarFallback>
+                    </Avatar>
+                  </TableCell>
                   <TableCell className="font-medium">{courier.full_name}</TableCell>
                   <TableCell>{courier.phone}</TableCell>
                   <TableCell className="text-muted-foreground">{courier.passport_no}</TableCell>
@@ -253,6 +290,44 @@ export default function Couriers() {
             <DialogTitle>{editTarget ? 'Редактировать курьера' : 'Добавить курьера'}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label>Фото</Label>
+              <div className="flex items-center gap-3">
+                <Avatar className="w-14 h-14">
+                  <AvatarImage src={form.avatar_url || undefined} alt="avatar" />
+                  <AvatarFallback className="text-lg">{form.full_name?.[0] ?? '?'}</AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col gap-1">
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleAvatarUpload}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={avatarUploading}
+                    onClick={() => avatarInputRef.current?.click()}
+                  >
+                    {avatarUploading ? <><Loader2 size={13} className="mr-1 animate-spin" />Загрузка...</> : 'Выбрать фото'}
+                  </Button>
+                  {form.avatar_url && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-500 hover:text-red-700 h-7 text-xs"
+                      onClick={() => setForm((p) => ({ ...p, avatar_url: '' }))}
+                    >
+                      Удалить фото
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="full_name">ФИО</Label>
               <Input

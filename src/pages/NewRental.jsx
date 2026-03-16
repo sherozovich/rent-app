@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { ChevronLeft, ChevronRight, Check } from 'lucide-react'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { supabase } from '@/lib/supabase'
 import { generateAgreementNumber } from '@/lib/agreementNumber'
 import { formatUzPhone, formatAmount } from '@/lib/utils'
@@ -186,9 +187,15 @@ function Step1({ data, setData }) {
       )}
 
       {data.courier && (
-        <div className="rounded-lg border border-primary bg-primary/5 px-4 py-3 text-sm">
-          <div className="font-medium">{data.courier.full_name}</div>
-          <div className="text-muted-foreground">{data.courier.phone}</div>
+        <div className="rounded-lg border border-primary bg-primary/5 px-4 py-3 text-sm flex items-center gap-3">
+          <Avatar className="w-9 h-9 shrink-0">
+            <AvatarImage src={data.courier.avatar_url || undefined} alt={data.courier.full_name} />
+            <AvatarFallback className="text-xs">{data.courier.full_name?.[0] ?? '?'}</AvatarFallback>
+          </Avatar>
+          <div>
+            <div className="font-medium">{data.courier.full_name}</div>
+            <div className="text-muted-foreground">{data.courier.phone}</div>
+          </div>
         </div>
       )}
 

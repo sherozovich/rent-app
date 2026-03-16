@@ -1,7 +1,10 @@
 import { useRef, useState } from 'react'
+import imageCompression from 'browser-image-compression'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Upload, X, Loader2 } from 'lucide-react'
+
+const COMPRESSION_OPTIONS = { maxSizeMB: 0.5, maxWidthOrHeight: 1280, useWebWorker: true }
 
 /**
  * PhotoUpload — upload rental photos to Supabase Storage (bucket: rental-photos)
@@ -25,10 +28,11 @@ export default function PhotoUpload({ rentalId, photos = [], onUpdate }) {
     try {
       const urls = await Promise.all(
         files.map(async (file) => {
+          const compressed = await imageCompression(file, COMPRESSION_OPTIONS)
           const path = `${rentalId}/${Date.now()}-${file.name}`
           const { error: uploadError } = await supabase.storage
             .from('rental-photos')
-            .upload(path, file, { upsert: false })
+            .upload(path, compressed, { upsert: false })
           if (uploadError) throw new Error(uploadError.message)
 
           const { data } = supabase.storage.from('rental-photos').getPublicUrl(path)
@@ -96,12 +100,12 @@ export default function PhotoUpload({ rentalId, photos = [], onUpdate }) {
         {uploading ? (
           <>
             <Loader2 size={14} className="mr-2 animate-spin" />
-            Uploading...
+            Загрузка...
           </>
         ) : (
           <>
             <Upload size={14} className="mr-2" />
-            Upload Photos
+            Загрузить фото
           </>
         )}
       </Button>
