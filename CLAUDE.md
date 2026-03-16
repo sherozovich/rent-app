@@ -99,11 +99,16 @@ Never commit `.env`. Always use `.env.example` as the template.
 ### couriers
 
 ```sql
-id           uuid PRIMARY KEY DEFAULT gen_random_uuid()
-full_name    text NOT NULL
-passport_no  text NOT NULL
-phone        text NOT NULL
-created_at   timestamp DEFAULT now()
+id                 uuid PRIMARY KEY DEFAULT gen_random_uuid()
+full_name          text NOT NULL
+passport_no        text NOT NULL
+phone              text NOT NULL
+license_no         text
+license_issue_date date
+nationality        text
+birth_country      text
+birth_city         text
+created_at         timestamp DEFAULT now()
 ```
 
 ### scooters
@@ -253,7 +258,8 @@ All monetary values must be displayed in UZS (Uzbek Som).
 ### Couriers (`/couriers`)
 
 - List with: name, phone, active rental count
-- Add / Edit courier (full_name, passport_no, phone)
+- Add / Edit courier: full_name, passport_no, phone, license_no, license_issue_date, nationality, birth_country, birth_city
+- Country list from `restcountries.com/v3.1/all?fields=name`; cities from `countriesnow.space/api/v0.1/countries/cities` (POST)
 
 ### Scooters (`/scooters`)
 
@@ -262,9 +268,9 @@ All monetary values must be displayed in UZS (Uzbek Som).
 
 ### New Rental (`/rentals/new`) — 5-step wizard
 
-1. Select or quick-add courier
-1. Select available scooter
-1. Fill: tariff, days (if daily, min 3), start_date, license_no, license_issue_date
+1. Select or quick-add courier — search by name (live filter)
+1. Select available scooter — search by plate number (live filter)
+1. Fill: tariff, days (if daily, min 3), start_date (license_no/license_issue_date auto-filled from courier)
 1. Review summary → confirm → create rental + update scooter status
 1. Print documents + upload photos + record prepayment → activate
 
@@ -294,7 +300,7 @@ All monetary values must be displayed in UZS (Uzbek Som).
 Two sections:
 
 1. **Pricing** — edit daily / weekly / monthly rates (UZS), Save button → updates `settings` table
-2. **Change Password** — current password + new password + confirm, Save → verify then update `settings` table
+2. **Change Password** — new password + confirm (no current password required), Save → update `settings` table
 
 ### Expenses (`/expenses`) — Phase 10
 
