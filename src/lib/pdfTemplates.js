@@ -118,90 +118,173 @@ export function rentalAgreementDoc(rental) {
   }
 }
 
+function formatDateLong(dateStr) {
+  if (!dateStr) return '___'
+  const months = [
+    'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+    'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
+  ]
+  const d = new Date(dateStr + 'T00:00:00')
+  return `«${d.getDate()}» ${months[d.getMonth()]} ${d.getFullYear()} года`
+}
+
+function fieldRow(label, value) {
+  const displayValue = value || ''
+  return [
+    { text: label, style: 'fieldLabel' },
+    {
+      text: displayValue || ' ',
+      style: 'fieldValue',
+      decoration: 'underline',
+    },
+  ]
+}
+
 /**
  * Doverenost (Доверенность) document definition.
+ * Matches the official DOKON TEAM power-of-attorney format.
  */
 export function doverenostDoc(rental) {
   const { courier, scooter, start_date, end_date, license_no, license_issue_date } = rental
 
   return {
     content: [
-      { text: 'ДОВЕРЕННОСТЬ', style: 'title' },
-      { text: 'на управление транспортным средством', style: 'subtitle', margin: [0, 0, 0, 24] },
-
+      // Company header
       {
-        text: [
-          { text: 'Настоящая доверенность выдана ' },
-          { text: courier?.full_name || '___________', bold: true },
-          { text: ', паспорт: ' },
-          { text: courier?.passport_no || '___________', bold: true },
-          { text: ', водительское удостоверение № ' },
-          { text: license_no || '___________', bold: true },
-          { text: `, выданное ${formatDate(license_issue_date)},` },
-        ],
-        style: 'body',
-        margin: [0, 0, 0, 12],
+        text: 'ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ',
+        style: 'companyName',
+      },
+      {
+        text: '«DOKON TEAM» MCHJ',
+        style: 'companyName',
+        margin: [0, 0, 0, 16],
       },
 
+      // Title
+      { text: 'ДОВЕРЕННОСТЬ', style: 'title', margin: [0, 0, 0, 20] },
+
+      // Opening
       {
-        text: [
-          { text: 'на право управления транспортным средством: ' },
-          { text: scooter?.model || '___________', bold: true },
-          { text: ', гос. номер: ' },
-          { text: scooter?.plate || '___________', bold: true },
-          { text: ', VIN: ' },
-          { text: scooter?.vin || '___________', bold: true },
-          { text: '.' },
-        ],
+        text: 'ООО «DOKON TEAM» доверяет управление и вождение на территории Республики Узбекистан следующего транспортного средства:',
         style: 'body',
-        margin: [0, 0, 0, 12],
+        margin: [0, 0, 0, 10],
       },
 
+      // Vehicle fields
+      {
+        table: {
+          widths: ['45%', '55%'],
+          body: [
+            fieldRow('Марка, модель:', scooter?.model),
+            fieldRow('Государственный номер:', scooter?.plate),
+            fieldRow('Номер кузова (VIN):', scooter?.vin),
+            fieldRow('Номер двигателя:', ''),
+            fieldRow('Цвет:', ''),
+          ],
+        },
+        layout: 'noBorders',
+        margin: [0, 0, 0, 16],
+      },
+
+      // Employee header
+      { text: 'Сотруднику предприятия:', style: 'sectionHeader', margin: [0, 0, 0, 8] },
+
+      // Employee fields
+      {
+        table: {
+          widths: ['45%', '55%'],
+          body: [
+            fieldRow('Ф.И.О.:', courier?.full_name),
+            fieldRow('Паспорт серия / №:', courier?.passport_no),
+            fieldRow('Выдан:', ''),
+            fieldRow('Адрес проживания:', courier?.address),
+            fieldRow('Водительское удостоверение серия / №:', license_no),
+            fieldRow('Дата выдачи:', license_issue_date ? formatDate(license_issue_date) : ''),
+          ],
+        },
+        layout: 'noBorders',
+        margin: [0, 0, 0, 20],
+      },
+
+      // Validity period
       {
         text: [
-          { text: 'Срок действия доверенности: с ' },
-          { text: formatDate(start_date), bold: true },
+          { text: 'Настоящая доверенность выдана сроком с ' },
+          { text: formatDateLong(start_date), bold: true },
           { text: ' по ' },
-          { text: formatDate(end_date), bold: true },
+          { text: formatDateLong(end_date), bold: true },
           { text: '.' },
         ],
         style: 'body',
-        margin: [0, 0, 0, 40],
+        margin: [0, 0, 0, 12],
       },
 
+      // Rights description
       {
-        columns: [
-          {
-            width: '50%',
-            stack: [
-              { text: 'Доверитель:', style: 'signLabel' },
-              { text: '\n\n' },
-              { text: '________________________', style: 'signLine' },
-              { text: '(подпись / ФИО)', style: 'signHint' },
-              { text: '\n\nМ.П.', style: 'signHint' },
+        text: 'Доверенность дает право управления, эксплуатации транспортного средства, представления интересов предприятия в органах ГАИ, страховых и иных государственных органах, связанных с использованием данного автомобиля.',
+        style: 'body',
+        margin: [0, 0, 0, 36],
+      },
+
+      // Signatures
+      {
+        table: {
+          widths: ['50%', '50%'],
+          body: [
+            [
+              { text: 'Директор', style: 'signLabel' },
+              { text: ' ', style: 'signLabel' },
             ],
-          },
-          {
-            width: '50%',
-            stack: [
-              { text: 'Доверенное лицо:', style: 'signLabel' },
-              { text: '\n\n' },
-              { text: '________________________', style: 'signLine' },
-              { text: `${courier?.full_name || ''}`, style: 'signHint' },
+            [
+              {
+                text: [
+                  { text: '____________________________' },
+                  { text: '  /  ' },
+                  { text: '_______________' },
+                ],
+                style: 'signLine',
+                margin: [0, 4, 0, 12],
+              },
+              { text: ' ' },
             ],
-          },
-        ],
+            [
+              { text: 'Главный бухгалтер', style: 'signLabel' },
+              { text: ' ', style: 'signLabel' },
+            ],
+            [
+              {
+                text: [
+                  { text: '____________________________' },
+                  { text: '  /  ' },
+                  { text: '_______________' },
+                ],
+                style: 'signLine',
+                margin: [0, 4, 0, 16],
+              },
+              { text: ' ' },
+            ],
+            [
+              { text: 'М.П.', style: 'stampLabel' },
+              { text: ' ' },
+            ],
+          ],
+        },
+        layout: 'noBorders',
       },
     ],
+
     styles: {
-      title: { fontSize: 18, bold: true, alignment: 'center', margin: [0, 0, 0, 4] },
-      subtitle: { fontSize: 12, alignment: 'center', color: '#555' },
-      body: { fontSize: 11, lineHeight: 1.4 },
-      signLabel: { fontSize: 10, bold: true, margin: [0, 0, 0, 8] },
+      companyName: { fontSize: 11, bold: true, alignment: 'center' },
+      title: { fontSize: 18, bold: true, alignment: 'center' },
+      sectionHeader: { fontSize: 11, bold: true },
+      body: { fontSize: 11, lineHeight: 1.5 },
+      fieldLabel: { fontSize: 10, color: '#444', margin: [0, 3, 8, 3] },
+      fieldValue: { fontSize: 10, bold: true, margin: [0, 3, 0, 3] },
+      signLabel: { fontSize: 10, bold: true },
       signLine: { fontSize: 10 },
-      signHint: { fontSize: 8, color: '#888', margin: [0, 2, 0, 0] },
+      stampLabel: { fontSize: 10, color: '#666' },
     },
-    defaultStyle: { font: 'Roboto', fontSize: 11 },
+    defaultStyle: { font: 'Roboto', fontSize: 10 },
     pageMargins: [50, 50, 50, 50],
   }
 }
