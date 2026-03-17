@@ -487,6 +487,41 @@ App must work on mobile browsers (phone screen).
 
 -----
 
+## MCP Servers
+
+Claude Code için kurulan MCP sunucuları. Yeni bir ortamda çalışırken aşağıdakilerin kurulu olduğundan emin ol.
+
+### `.mcp.json` (proje dizininde, gitignore'da — token içerir)
+
+| MCP | Tür | Kurulum / Kaynak |
+|-----|-----|-----------------|
+| `memory` | stdio | `npx @modelcontextprotocol/server-memory` |
+| `github` | http | `https://api.githubcopilot.com/mcp/` + GitHub PAT token |
+| `playwright` | stdio | `npx @playwright/mcp@latest` |
+| `supabase` | http | `https://mcp.supabase.com/mcp?project_ref=...` + Supabase token |
+
+### Claude Code Global MCP'ler (`~/.claude/` ayarları)
+
+| MCP | Amaç |
+|-----|------|
+| **Claude Preview** | Dev server önizleme — `npm run dev` sonrası screenshot, click, network |
+| **Claude in Chrome** | Tarayıcı kontrolü (ek seçenek, Playwright alternatifi) |
+| **Vercel** | Deploy yönetimi, build logs, runtime logs |
+| **Figma** | UI tasarım referansı, bileşen görüntüleme |
+| **shadcn Studio** | shadcn bileşen içerikleri, blok şablonları |
+| **Context7 (Lib Docs)** | React, Vite, Supabase vb. kütüphane dokümantasyonu |
+| **Scheduled Tasks** | Zamanlı görev yönetimi |
+| **MCP Registry** | Yeni MCP arama ve öneri |
+
+### Kullanım Notları
+- `.mcp.json` asla commit'lenmesin — token içeriyor
+- `memory` MCP: konuşmalar arası kararlar, tercihler, debug geçmişi saklar
+- `playwright` MCP: `bormibor.uz` veya `localhost:5173` üzerinde UI testi için
+- `github` MCP: `github.com/sherozovich/rent-app` repo işlemleri için
+- `supabase` MCP: prod DB = `dzknpbalwaghbvrzbssr`, dev DB = `lzqccynljtfidgkjoojr`
+
+-----
+
 ## Development Commands
 
 ```bash
@@ -503,15 +538,17 @@ npm run preview    # preview production build
 ### Branch yapısı
 
 - `main` → stable, production-ready. Push to main triggers auto-deploy to bormibor.uz
-- `feature/<description>` → new features
+- `dev` → active development, local testing & polish (normal çalışma branch'i)
+- `feature/<description>` → büyük izole özellikler (opsiyonel)
 - `fix/<description>` → bug fixes
+
+**Normal akış:** `dev` branch'te geliştir → test et → `main`'e merge → Vercel'e deploy
 
 ### Her değişiklik için adımlar
 
 ```bash
-# 1. main'den yeni branch aç
-git checkout main
-git checkout -b fix/bug-name   # veya feature/feature-name
+# 1. dev branch'te çalış
+git checkout dev
 
 # 2. Kodu değiştir, lokalda test et
 npm run dev
@@ -520,9 +557,9 @@ npm run dev
 git add src/pages/xx.jsx
 git commit -m "fix(page): açıklama"
 
-# 4. Main'e merge et ve push et
+# 4. Hazır olunca main'e merge et
 git checkout main
-git merge fix/bug-name
+git merge dev
 git push origin main           # → Vercel otomatik deploy eder → bormibor.uz güncellenir
 
 # 5. Branch'i temizle
