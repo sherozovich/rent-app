@@ -165,7 +165,7 @@ export function doverenostDoc(rental) {
 
       // Opening
       {
-        text: 'ООО «DOKON TEAM» доверяет управление и вождение на территории Республики Узбекистан следующего транспортного средства:',
+        text: 'ООО «DOKON TEAM» доверяет управление и вождение на территории Республики Узбекистан транспортным средством, принадлежащим ООО «DOKON TEAM»:',
         style: 'body',
         margin: [0, 0, 0, 10],
       },
@@ -178,8 +178,7 @@ export function doverenostDoc(rental) {
             fieldRow('Марка, модель:', scooter?.model),
             fieldRow('Государственный номер:', scooter?.plate),
             fieldRow('Номер кузова (VIN):', scooter?.vin),
-            fieldRow('Номер двигателя:', ''),
-            fieldRow('Цвет:', ''),
+            fieldRow('Цвет:', 'Чёрный'),
           ],
         },
         layout: 'noBorders',
@@ -187,7 +186,7 @@ export function doverenostDoc(rental) {
       },
 
       // Employee header
-      { text: 'Сотруднику предприятия:', style: 'sectionHeader', margin: [0, 0, 0, 8] },
+      { text: 'Доверенному лицу:', style: 'sectionHeader', margin: [0, 0, 0, 8] },
 
       // Employee fields
       {
