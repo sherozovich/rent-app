@@ -117,6 +117,15 @@ export function useRental(id) {
     await fetchRental()
   }
 
+  async function updateRental(updates) {
+    const { error } = await supabase
+      .from('rentals')
+      .update(updates)
+      .eq('id', id)
+    if (error) throw new Error(error.message)
+    await fetchRental()
+  }
+
   const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount), 0)
 
   return {
@@ -128,6 +137,7 @@ export function useRental(id) {
     addPayment,
     updateRentalStatus,
     updatePhotos,
+    updateRental,
     refetch: fetchRental,
   }
 }

@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ChevronLeft, Plus, RefreshCw, CheckCircle, FileText, FileCheck } from 'lucide-react'
+import { ChevronLeft, Plus, RefreshCw, CheckCircle, FileText, FileCheck, Pencil } from 'lucide-react'
 import { useRental } from '@/hooks/useRentals'
-import { calcTotalCharged } from '@/lib/tariffRates'
+import { calcTotalCharged, TARIFF_RATES } from '@/lib/tariffRates'
 import { formatAmount } from '@/lib/utils'
 import { printPdf } from '@/lib/printPdf'
 import { rentalAgreementDoc, doverenostDoc } from '@/lib/pdfTemplates'
@@ -36,6 +36,15 @@ import PhotoUpload from '@/components/PhotoUpload'
 
 const emptyPayment = { amount: '', method: 'cash', paid_at: new Date().toISOString().split('T')[0], note: '' }
 
+function computeEndDate(tariff, start, days) {
+  if (!start) return ''
+  const d = new Date(start + 'T00:00:00')
+  if (tariff === 'daily') d.setDate(d.getDate() + Number(days))
+  else if (tariff === 'weekly') d.setDate(d.getDate() + 8)
+  else if (tariff === 'monthly') d.setDate(d.getDate() + 31)
+  return d.toISOString().slice(0, 10)
+}
+
 function InfoRow({ label, value }) {
   return (
     <div className="flex flex-col md:flex-row md:justify-between py-2 border-b last:border-0">
@@ -48,7 +57,7 @@ function InfoRow({ label, value }) {
 export default function RentalDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { rental, payments, loading, error, totalPaid, addPayment, updateRentalStatus, updatePhotos, refetch } =
+  const { rental, payments, loading, error, totalPaid, addPayment, updateRentalStatus, updatePhotos, updateRental, refetch } =
     useRental(id)
 
   const [payOpen, setPayOpen] = useState(false)
@@ -56,6 +65,10 @@ export default function RentalDetail() {
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState(null)
   const [confirmComplete, setConfirmComplete] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
+  const [editForm, setEditForm] = useState({})
+  const [editSaving, setEditSaving] = useState(false)
+  const [editError, setEditError] = useState(null)
 
   async function handleAddPayment(e) {
     e.preventDefault()
@@ -88,6 +101,62 @@ export default function RentalDetail() {
 
   async function handlePrintDoverenost() {
     await printPdf(doverenostDoc(rental))
+  }
+
+  function openEditDialog() {
+    const days = rental.tariff === 'daily'
+      ? String(Math.max(3, Math.round((new Date(rental.end_date) - new Date(rental.start_date + 'T00:00:00')) / 86400000)))
+      : '7'
+    setEditForm({
+      tariff: rental.tariff,
+      start_date: rental.start_date,
+      end_date: rental.end_date,
+      days,
+      agreed_price: rental.agreed_price != null ? String(rental.agreed_price) : String(calcTotalCharged(rental.tariff, rental.start_date, rental.end_date)),
+      license_no: rental.license_no || '',
+      license_issue_date: rental.license_issue_date || '',
+    })
+    setEditError(null)
+    setEditOpen(true)
+  }
+
+  function handleEditChange(field, value) {
+    setEditForm((prev) => {
+      const next = { ...prev, [field]: value }
+      // Recompute end_date when tariff/start/days change
+      if (['tariff', 'start_date', 'days'].includes(field)) {
+        const tariff = field === 'tariff' ? value : next.tariff
+        const start = field === 'start_date' ? value : next.start_date
+        const days = field === 'days' ? value : next.days
+        next.end_date = computeEndDate(tariff, start, days)
+        // Recompute default price
+        const defaultPrice = tariff === 'daily'
+          ? Number(days) * TARIFF_RATES.daily
+          : calcTotalCharged(tariff, start, next.end_date)
+        next.agreed_price = String(defaultPrice)
+      }
+      return next
+    })
+  }
+
+  async function handleEditSave() {
+    setEditSaving(true)
+    setEditError(null)
+    try {
+      await updateRental({
+        tariff: editForm.tariff,
+        start_date: editForm.start_date,
+        end_date: editForm.end_date,
+        agreed_price: Number(editForm.agreed_price),
+        license_no: editForm.license_no,
+        license_issue_date: editForm.license_issue_date || null,
+      })
+      setEditOpen(false)
+    } catch (err) {
+      setEditError(err.message)
+    } finally {
+      setEditSaving(false)
+    }
   }
 
   function handleRenew() {
@@ -135,7 +204,11 @@ export default function RentalDetail() {
           </div>
         </div>
         {rental.status === 'active' && (
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={openEditDialog}>
+              <Pencil size={14} className="mr-1" />
+              Изменить
+            </Button>
             <Button variant="outline" size="sm" onClick={handleRenew}>
               <RefreshCw size={14} className="mr-1" />
               Продлить
@@ -322,6 +395,81 @@ export default function RentalDetail() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Rental Dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Изменить аренду</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Тариф</Label>
+              <Select value={editForm.tariff} onValueChange={(v) => handleEditChange('tariff', v)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="daily">Суточный</SelectItem>
+                  <SelectItem value="weekly">Еженедельный</SelectItem>
+                  <SelectItem value="monthly">Ежемесячный</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {editForm.tariff === 'daily' && (
+              <div className="space-y-2">
+                <Label>Дней (мин. 3)</Label>
+                <Input
+                  inputMode="numeric"
+                  min={3}
+                  value={editForm.days}
+                  onChange={(e) => handleEditChange('days', e.target.value.replace(/\D/g, ''))}
+                />
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label>Дата начала</Label>
+              <Input
+                type="date"
+                value={editForm.start_date}
+                onChange={(e) => handleEditChange('start_date', e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Дата окончания (авто)</Label>
+              <Input type="date" value={editForm.end_date} readOnly className="bg-muted text-muted-foreground" />
+            </div>
+            <div className="space-y-2">
+              <Label>Стоимость (сум)</Label>
+              <Input
+                inputMode="numeric"
+                value={formatAmount(editForm.agreed_price)}
+                onChange={(e) => setEditForm((p) => ({ ...p, agreed_price: e.target.value.replace(/\D/g, '') }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Номер прав</Label>
+              <Input
+                value={editForm.license_no}
+                onChange={(e) => setEditForm((p) => ({ ...p, license_no: e.target.value.toUpperCase() }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Дата выдачи прав</Label>
+              <Input
+                type="date"
+                value={editForm.license_issue_date}
+                onChange={(e) => setEditForm((p) => ({ ...p, license_issue_date: e.target.value }))}
+              />
+            </div>
+            {editError && <p className="text-sm text-destructive">{editError}</p>}
+          </div>
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setEditOpen(false)}>Отмена</Button>
+            <Button onClick={handleEditSave} disabled={editSaving}>
+              {editSaving ? 'Сохранение...' : 'Сохранить'}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
