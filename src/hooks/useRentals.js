@@ -66,7 +66,7 @@ export function useRental(id) {
         .from('rentals')
         .select(`
           *,
-          courier:couriers(id, full_name, passport_no, phone, address),
+          courier:couriers(id, full_name, passport_no, phone, address, birth_city, birth_country),
           scooter:scooters(id, model, plate, vin)
         `)
         .eq('id', id)

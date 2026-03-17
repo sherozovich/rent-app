@@ -195,7 +195,7 @@ export function doverenostDoc(rental) {
           body: [
             fieldRow('Ф.И.О.:', courier?.full_name),
             fieldRow('Паспорт серия / №:', courier?.passport_no),
-            fieldRow('Выдан:', ''),
+            fieldRow('Выдан:', [courier?.birth_city, courier?.birth_country].filter(Boolean).join(', ')),
             fieldRow('Адрес проживания:', courier?.address),
             fieldRow('Водительское удостоверение серия / №:', license_no),
             fieldRow('Дата выдачи:', license_issue_date ? formatDate(license_issue_date) : ''),
