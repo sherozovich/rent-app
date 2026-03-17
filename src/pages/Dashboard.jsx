@@ -105,6 +105,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [sendingId, setSendingId] = useState(null)
   const [sentIds, setSentIds] = useState(new Set())
+  const [telegramError, setTelegramError] = useState(null)
 
   useEffect(() => {
     fetchDashboard()
@@ -118,22 +119,20 @@ export default function Dashboard() {
       const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
       const [
-        { data: scooters },
-        { data: activeRentals },
-        { data: monthPayments },
-        { data: allPayments },
-        { data: monthExpensesData },
-        { data: last30Payments },
-        { data: catExpenses },
+        { data: scooters = [] },
+        { data: activeRentals = [] },
+        { data: monthPayments = [] },
+        { data: monthExpensesData = [] },
+        { data: last30Payments = [] },
+        { data: catExpenses = [] },
       ] = await Promise.all([
         supabase.from('scooters').select('status'),
         supabase
           .from('rentals')
-          .select('*, courier:couriers(id, full_name, phone), scooter:scooters(id, model, plate)')
+          .select('*, courier:couriers(id, full_name, phone), scooter:scooters(id, model, plate), payments(amount)')
           .eq('status', 'active')
           .order('end_date', { ascending: true }),
         supabase.from('payments').select('amount').gte('paid_at', monthStart),
-        supabase.from('payments').select('rental_id, amount'),
         supabase.from('expenses').select('amount').gte('spent_at', monthStart),
         supabase.from('payments').select('paid_at, amount').gte('paid_at', thirtyDaysAgo),
         supabase.from('expenses').select('category, amount').gte('spent_at', monthStart),
@@ -183,16 +182,12 @@ export default function Dashboard() {
       const in2Days = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
       setExpiring(rentalsArr.filter((r) => r.end_date >= todayStr && r.end_date <= in2Days))
 
-      const paidMap = {}
-      ;(allPayments || []).forEach((p) => {
-        paidMap[p.rental_id] = (paidMap[p.rental_id] || 0) + Number(p.amount)
-      })
       setOverdue(
         rentalsArr
           .map((r) => ({
             ...r,
             totalCharged: r.agreed_price != null ? Number(r.agreed_price) : calcTotalCharged(r.tariff, r.start_date, r.end_date),
-            totalPaid: paidMap[r.id] || 0,
+            totalPaid: (r.payments || []).reduce((s, p) => s + Number(p.amount), 0),
           }))
           .filter((r) => r.totalCharged - r.totalPaid > 0),
       )
@@ -204,11 +199,12 @@ export default function Dashboard() {
 
   async function handleSendReminder(rental) {
     setSendingId(rental.id)
+    setTelegramError(null)
     try {
       await sendTelegramMessage(buildReminderText(rental))
       setSentIds((prev) => new Set([...prev, rental.id]))
     } catch (err) {
-      alert(`Ошибка отправки: ${err.message}`)
+      setTelegramError(`Ошибка отправки: ${err.message}`)
     } finally {
       setSendingId(null)
     }
@@ -344,6 +340,9 @@ export default function Dashboard() {
           count={expiring.length}
           countColor="bg-orange-100 text-orange-700"
         />
+        {telegramError && (
+          <p className="text-xs text-red-600 mb-2">{telegramError}</p>
+        )}
         {expiring.length === 0 ? (
           <Card><CardContent className="py-6 text-center text-sm text-muted-foreground">Нет аренд, истекающих в ближайшие 2 дня.</CardContent></Card>
         ) : (
