@@ -23,6 +23,10 @@ export default function PhotoUpload({ rentalId, photos = [], onUpdate }) {
   async function handleFiles(e) {
     const files = Array.from(e.target.files)
     if (!files.length) return
+    const invalid = files.find((f) => !f.type.startsWith('image/'))
+    if (invalid) { setError('Только изображения разрешены'); return }
+    const tooBig = files.find((f) => f.size > 50 * 1024 * 1024)
+    if (tooBig) { setError('Файл слишком большой (макс. 50 МБ)'); return }
     setUploading(true)
     setError(null)
     try {
@@ -49,12 +53,12 @@ export default function PhotoUpload({ rentalId, photos = [], onUpdate }) {
   }
 
   async function handleDelete(url) {
-    // Extract path from URL: everything after /rental-photos/
     const marker = '/rental-photos/'
     const idx = url.indexOf(marker)
     if (idx === -1) return
     const path = url.slice(idx + marker.length)
-    await supabase.storage.from('rental-photos').remove([path])
+    const { error: deleteError } = await supabase.storage.from('rental-photos').remove([path])
+    if (deleteError) { setError(deleteError.message); return }
     onUpdate(photos.filter((p) => p !== url))
   }
 
@@ -67,6 +71,7 @@ export default function PhotoUpload({ rentalId, photos = [], onUpdate }) {
               <img
                 src={url}
                 alt="rental photo"
+                loading="lazy"
                 className="h-24 w-24 object-cover rounded border"
               />
             </a>

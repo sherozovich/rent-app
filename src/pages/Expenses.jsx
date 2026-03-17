@@ -58,6 +58,7 @@ export default function Expenses() {
 
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState(null)
 
   const fetchExpenses = useCallback(async () => {
     setLoading(true)
@@ -105,8 +106,10 @@ export default function Expenses() {
 
   async function handleDelete() {
     setDeleting(true)
+    setDeleteError(null)
     try {
-      await supabase.from('expenses').delete().eq('id', deleteTarget.id)
+      const { error } = await supabase.from('expenses').delete().eq('id', deleteTarget.id)
+      if (error) { setDeleteError(error.message); return }
       setDeleteTarget(null)
       fetchExpenses()
     } finally {
@@ -293,7 +296,7 @@ export default function Expenses() {
       </Dialog>
 
       {/* Delete dialog */}
-      <Dialog open={!!deleteTarget} onOpenChange={(v) => { if (!v) setDeleteTarget(null) }}>
+      <Dialog open={!!deleteTarget} onOpenChange={(v) => { if (!v) { setDeleteTarget(null); setDeleteError(null) } }}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Удалить расход</DialogTitle>
@@ -302,8 +305,9 @@ export default function Expenses() {
             Удалить{' '}
             <span className="font-medium">{deleteTarget?.description}</span>? Это нельзя отменить.
           </p>
+          {deleteError && <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{deleteError}</p>}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleting}>
+            <Button variant="outline" onClick={() => { setDeleteTarget(null); setDeleteError(null) }} disabled={deleting}>
               Отмена
             </Button>
             <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
