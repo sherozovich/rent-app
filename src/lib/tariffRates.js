@@ -31,6 +31,7 @@ export async function loadTariffRates() {
       }
     }
   }
+  return { ...TARIFF_RATES }
 }
 
 /**

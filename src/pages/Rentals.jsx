@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useDeferredValue } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, Trash2 } from 'lucide-react'
 import { useRentals } from '@/hooks/useRentals'
@@ -32,6 +32,7 @@ export default function Rentals() {
   const navigate = useNavigate()
   const [statusFilter, setStatusFilter] = useState('all')
   const [search, setSearch] = useState('')
+  const deferredSearch = useDeferredValue(search)
 
   const { rentals, loading, error, deleteRental } = useRentals(
     statusFilter !== 'all' ? { status: statusFilter } : {},
@@ -54,8 +55,8 @@ export default function Rentals() {
   }
 
   const filtered = rentals.filter((r) => {
-    if (!search) return true
-    const q = search.toLowerCase()
+    if (!deferredSearch) return true
+    const q = deferredSearch.toLowerCase()
     return (
       r.courier?.full_name?.toLowerCase().includes(q) ||
       r.scooter?.plate?.toLowerCase().includes(q) ||
