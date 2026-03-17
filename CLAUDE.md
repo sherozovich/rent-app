@@ -57,6 +57,7 @@ dokon/
     │   ├── AuthGuard.jsx        # Phase 8: route protection
     │   ├── StatusBadge.jsx      # Russian status labels
     │   ├── PhotoUpload.jsx      # upload to Supabase Storage with compression, delete photos
+    │   ├── SearchCombobox.jsx   # shared searchable combobox (Phase 17)
     │   └── ui/                  # shadcn/ui components
     │       ├── avatar.jsx
     │       ├── badge.jsx
@@ -561,6 +562,7 @@ Current state: **v1.0 — production-ready.** All core features complete and dep
 |14   |End-date buffer: +2 days for weekly/monthly, +1 day for daily (paperwork/handover day)|Done|
 |15   |Bug fixes: dashboard agreed_price, payments layout, quick-add avatar, rental-photos bucket|Done|
 |16   |PDF rewrite (rental agreement + doverenost), edit rental dialog, UTC date fix, dev/prod DB separation|Done|
+|17   |Performance & stability: remove unbounded DB query, lazy loading, error guards, useDeferredValue, shared SearchCombobox|Done|
 
 New features and fixes go on `feature/<description>` or `fix/<description>` branches, then PR to main.
 
@@ -618,7 +620,7 @@ Always use this map when displaying tariffs:
 
 ### SearchCombobox
 Custom component used for: birth_country, birth_city (Couriers + NewRental quick-add), **courier selection** (NewRental Step 1), **scooter selection** (NewRental Step 2).
-- Defined inline at top of each file (not a shared component)
+- Shared component at `src/components/SearchCombobox.jsx` — import from there
 - Uses `useRef` for click-outside detection
 - Shows filtered dropdown max 80 results
 - `onMouseDown e.preventDefault()` prevents blur-before-click
