@@ -38,11 +38,11 @@ const emptyPayment = { amount: '', method: 'cash', paid_at: new Date().toISOStri
 
 function computeEndDate(tariff, start, days) {
   if (!start) return ''
-  const d = new Date(start + 'T00:00:00')
+  const d = new Date(start)  // parse as UTC, same as NewRental.jsx
   if (tariff === 'daily') d.setDate(d.getDate() + Number(days))
   else if (tariff === 'weekly') d.setDate(d.getDate() + 8)
   else if (tariff === 'monthly') d.setDate(d.getDate() + 31)
-  return d.toISOString().slice(0, 10)
+  return d.toISOString().split('T')[0]
 }
 
 function InfoRow({ label, value }) {
@@ -105,7 +105,7 @@ export default function RentalDetail() {
 
   function openEditDialog() {
     const days = rental.tariff === 'daily'
-      ? String(Math.max(3, Math.round((new Date(rental.end_date) - new Date(rental.start_date + 'T00:00:00')) / 86400000)))
+      ? String(Math.max(3, Math.round((new Date(rental.end_date) - new Date(rental.start_date)) / 86400000)))
       : '7'
     setEditForm({
       tariff: rental.tariff,
