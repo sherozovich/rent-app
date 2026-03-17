@@ -500,9 +500,34 @@ npm run preview    # preview production build
 
 ## Git Workflow
 
-- `main` → stable, production-ready only
+### Branch yapısı
+
+- `main` → stable, production-ready. Push to main triggers auto-deploy to bormibor.uz
 - `feature/<description>` → new features
 - `fix/<description>` → bug fixes
+
+### Her değişiklik için adımlar
+
+```bash
+# 1. main'den yeni branch aç
+git checkout main
+git checkout -b fix/bug-name   # veya feature/feature-name
+
+# 2. Kodu değiştir, lokalda test et
+npm run dev
+
+# 3. Commit
+git add src/pages/xx.jsx
+git commit -m "fix(page): açıklama"
+
+# 4. Main'e merge et ve push et
+git checkout main
+git merge fix/bug-name
+git push origin main           # → Vercel otomatik deploy eder → bormibor.uz güncellenir
+
+# 5. Branch'i temizle
+git branch -d fix/bug-name
+```
 
 ### Commit format
 
@@ -516,9 +541,10 @@ chore(db): add scooter status trigger
 
 ## Production
 
-- **Live URL:** https://drent-jakromovs-projects.vercel.app (custom domain: https://www.bormibor.uz)
-- **Repo:** https://github.com/sherozovich/rent-app
-- **Deploy:** `npx vercel deploy --prod` from project root
+- **Live URL:** https://www.bormibor.uz (Vercel project: `drent`)
+- **Repo:** https://github.com/sherozovich/rent-app (default branch: `main`)
+- **Deploy:** `git push origin main` triggers automatic Vercel deploy
+- **Manual deploy:** `npx vercel deploy --prod` from project root (`.vercel/project.json` linked to `drent`)
 - **Node version:** 20.x (set in Vercel project settings)
 - **Framework:** Vite (configured in Vercel project settings)
 - **Env vars in Vercel:** `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
