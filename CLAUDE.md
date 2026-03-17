@@ -17,7 +17,7 @@ Single admin use. No multi-user auth required for v1.
 - **PDF Generation:** pdfmake (browser-side, no server needed)
 - **Image Compression:** browser-image-compression (client-side, before Supabase Storage upload)
 - **Notifications:** Telegram Bot API
-- **Hosting:** Vercel (https://dknrent.vercel.app)
+- **Hosting:** Vercel (https://drent-jakromovs-projects.vercel.app | custom: https://www.bormibor.uz)
 - **Language:** JavaScript (no TypeScript)
 - **UI Language:** Russian (все надписи на русском языке)
 
@@ -364,11 +364,26 @@ All monetary values must be displayed in UZS (Uzbek Som).
 ### Rental Detail (`/rentals/:id`)
 
 - All rental info
+- **Edit Rental** button (Pencil icon, active rentals only) → dialog to fix: tariff, days (daily), start_date, end_date (auto), agreed_price, license_no, license_issue_date
 - Payment history + Add payment (amount, method, paid_at, note)
 - Photo gallery
 - Print Rental Agreement / Print Doverenost buttons
 - Complete Rental button
 - Renew button (pre-fills new rental form)
+
+#### Edit Rental Dialog (`computeEndDate`)
+
+```js
+function computeEndDate(tariff, start, days) {
+  const d = new Date(start)  // UTC parse — matches NewRental.jsx
+  if (tariff === 'daily') d.setDate(d.getDate() + Number(days))
+  else if (tariff === 'weekly') d.setDate(d.getDate() + 8)
+  else if (tariff === 'monthly') d.setDate(d.getDate() + 31)
+  return d.toISOString().split('T')[0]
+}
+```
+
+**Always use `new Date(dateString)` (UTC parse), never `new Date(dateString + 'T00:00:00')` (local parse).** In UTC+5 (Tashkent), local midnight parses as UTC previous day, causing `toISOString()` to return one day early.
 
 ### Rentals List (`/rentals`)
 
@@ -403,15 +418,26 @@ Two sections:
 
 Both documents are generated client-side using pdfmake. Open in new tab for printing.
 
-### Rental Agreement fields
+### Rental Agreement
 
-agreement_no, date, courier full_name, passport_no, scooter model, VIN, plate,
-tariff (checkbox), start_date, end_date, signature lines (Admin | Courier)
+Full 8-section legal document matching official DOKON TEAM template:
+- **Section 1:** Parties — ООО «DOKON TEAM» MCHJ + courier (full_name, passport_no, address)
+- **Section 2:** Subject — scooter (model, Цвет: Чёрный static, plate, VIN)
+- **Section 3:** Terms — tariff checkboxes (`☑`/`☐`), agreed_price, start/end dates
+- **Sections 4–8:** Static legal clauses
+- Signatures: Арендодатель + Арендатор (courier.full_name)
+
+Helper functions in `pdfTemplates.js`:
+- `formatDateShort(dateStr)` → `«14» марта 2026 г.`
+- `cb(checked)` → `☑` / `☐`
+- `fmtPrice(amount)` → `Number(amount).toLocaleString('ru-RU')`
 
 ### Doverenost fields
 
-courier full_name, license_no, license_issue_date, scooter model, plate, VIN,
-valid from/to (= rental dates), stamp placeholder, signature lines
+courier full_name, birth_city/birth_country (Выдан: field), license_no, license_issue_date,
+scooter model, plate, VIN (no engine number), Цвет: Чёрный static,
+valid from/to (= rental dates), "принадлежащего ООО «DOKON TEAM» MCHJ" in opening,
+stamp placeholder, signature lines
 
 -----
 
@@ -489,12 +515,27 @@ chore(db): add scooter status trigger
 
 ## Production
 
-- **Live URL:** https://dknrent.vercel.app
+- **Live URL:** https://drent-jakromovs-projects.vercel.app (custom domain: https://www.bormibor.uz)
 - **Repo:** https://github.com/sherozovich/rent-app
 - **Deploy:** `npx vercel deploy --prod` from project root
 - **Node version:** 20.x (set in Vercel project settings)
 - **Framework:** Vite (configured in Vercel project settings)
 - **Env vars in Vercel:** `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+
+### Custom Domain DNS (bormibor.uz)
+
+Registrar DNS records (webspace.uz or similar):
+- `A` record: `bormibor.uz` → `76.76.21.21` (Vercel apex)
+- `CNAME` record: `www` → `cname.vercel-dns.com`
+
+Both `bormibor.uz` and `www.bormibor.uz` are added to Vercel project `drent`.
+Vercel redirects apex → `www.bormibor.uz` automatically.
+
+### Dev / Prod DB Separation
+
+- **Local dev** (`.env`) → `lzqccynljtfidgkjoojr.supabase.co` (dev Supabase)
+- **Vercel prod build** → `dzknpbalwaghbvrzbssr.supabase.co` (prod Supabase, set in Vercel dashboard)
+- **NEVER run** `vercel env pull` — it creates `.env.local` which overrides `.env` and points local to prod DB
 
 Current state: **v1.0 — production-ready.** All core features complete and deployed.
 
@@ -519,6 +560,7 @@ Current state: **v1.0 — production-ready.** All core features complete and dep
 |13   |Courier avatar upload + compression, avatar in list + NewRental card, rental photo compression|Done|
 |14   |End-date buffer: +2 days for weekly/monthly, +1 day for daily (paperwork/handover day)|Done|
 |15   |Bug fixes: dashboard agreed_price, payments layout, quick-add avatar, rental-photos bucket|Done|
+|16   |PDF rewrite (rental agreement + doverenost), edit rental dialog, UTC date fix, dev/prod DB separation|Done|
 
 New features and fixes go on `feature/<description>` or `fix/<description>` branches, then PR to main.
 
